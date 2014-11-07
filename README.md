@@ -26,6 +26,8 @@ Authentication and Authorization is delegated to the proxy. We believe that batt
 
 By default only HTTPS access (eventually with client certificate authentication) should be allowed, but plain-http mode is permitted for easy debugging.
 
+Clients
+=======
 
 Quickstart (with nginx)
 =======================
@@ -34,3 +36,10 @@ Quickstart (with nginx)
 Quickstart (with apache)
 ========================
 
+
+Status
+======
+
+Currently only Linux has full-features support
+
+FreeBSD can be used in switch mode
