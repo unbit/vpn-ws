@@ -62,6 +62,9 @@ int vpn_ws_read(vpn_ws_peer *peer, uint64_t amount) {
 }
 
 int vpn_ws_manage_fd(int queue, int fd) {
+	// when 1 invoke the event wait loop
+	int dirty = 0;
+
 	// check if the fd can be in the peers list
 	if (fd > vpn_ws_conf.peers_n) {
 		return -1;
@@ -103,49 +106,121 @@ int vpn_ws_manage_fd(int queue, int fd) {
 	// again ...
 	if (ret == 0) return 0;
 
+again:
+
 	// has completed handshake ?
 	if (!peer->handshake) {
-		int ret = vpn_ws_handshake(queue, peer);
-		if (ret < 0) {
+		int64_t hret = vpn_ws_handshake(queue, peer);
+		if (hret < 0) {
 			vpn_ws_peer_destroy(peer);
 			return -1;
 		}
 		// again ...
-		if (ret == 0) return 0;
+		if (hret == 0) return dirty;
 
 		peer->handshake = 1;
+		memmove(peer->buf, peer->buf + hret, peer->pos - hret);
+		peer->pos -= hret;
 	}
 
 	// do we have a full websocket packet ?
-	ret = vpn_ws_websocket_parse(peer);
-	if (ret < 0) {
+	uint16_t ws_header = 0;
+	int64_t ws_ret = vpn_ws_websocket_parse(peer, &ws_header);
+	if (ws_ret < 0) {
 		vpn_ws_peer_destroy(peer);
 		return -1;
 	}
 	// again
-	if (ret == 0) return 0;
+	if (ws_ret == 0) return dirty;
+
+	uint8_t *ws = peer->buf + ws_header;
+	uint64_t ws_len = ws_ret - ws_header;
+
+	// if the packed is masked, de-mask it
+	if (peer->has_mask) {
+		uint16_t i;
+		for (i=0;i<ws_len;i++) {
+			 ws[i] = ws[i] ^ peer->mask[i % 4];	
+		}
+		// move the header and clear the mask bit
+		memmove(peer->buf+4, peer->buf, ws_header - 4);	
+		peer->buf[5] &= 0x7f;
+	}
 
 	// do we have a full ethernet frame header ?
 
-	if (peer->pos < 14) return 0;
+	if (ws_len < 14) goto decapitate;
 
-	//uint8_t src_mac[6];
-	uint8_t dst_mac[6];
+	// copy mac addresses (src and dst) in a single memory area
+	uint8_t *mac = ws;
+
 	// get src MAC addr
+	if (!vpn_ws_mac_is_valid(mac+6)) goto decapitate;
+
 	// if the MAC has been already collected, compare it
 
+	if (peer->mac_collected) {
+		if (memcmp(peer->mac, mac+6, 6)) goto decapitate;
+	}
+	else {
+		memcpy(peer->mac, mac+6, 6);
+		peer->mac_collected = 1;
+	}
+
 	// get dst MAC addr
+	if (vpn_ws_mac_is_zero(mac)) goto decapitate;
 	// check if src MAC is different from dst MAC, loops are evil
+	if (vpn_ws_mac_is_loop(mac, mac+6)) goto decapitate;
+
+	uint8_t *data = peer->buf;
+	uint64_t data_len = ws_ret;
+	if (peer->has_mask) {
+		data+=4;
+		data_len-=4;
+	}
+
+	// check for reserved/not-implemented special mac-address
+	if (vpn_ws_mac_is_reserved(mac)) {
+		goto decapitate;
+	}
+
 
 	// check for broadcast
 	// append packet to each peer write buffer ...
 	// attempt to call write for each one
-	if (vpn_ws_mac_is_broadcast(dst_mac)) {
+	if (vpn_ws_mac_is_broadcast(mac)) {
 		// iterate over all peers and write to them
-		return -1;
+		uint64_t i;
+		for(i=0;i<vpn_ws_conf.peers_n;i++) {
+			vpn_ws_peer *b_peer = vpn_ws_conf.peers[i];
+			if (!b_peer) continue;
+			// myself ?
+			if (b_peer->fd == peer->fd) continue;
+			// already accounted ?
+			if (!b_peer->mac_collected) continue;
+			
+			int wret = vpn_ws_write(b_peer, data, data_len);
+			if (wret < 0) {
+				vpn_ws_peer_destroy(b_peer);
+				dirty = 1;
+				continue;
+			}
+			if (wret == 0) {
+				dirty = 1;
+				if (!b_peer->is_writing) {
+					if (vpn_ws_event_read_to_write(queue, b_peer->fd)) {
+						vpn_ws_peer_destroy(b_peer);
+						continue;
+					}
+				}
+				continue;
+			}	
+		}
+		goto decapitate;
 	}
 
 	// OR
+	fprintf(stdout, "%x:%x:%x:%x:%x:%x %x:%x:%x:%x:%x:%x\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], mac[6], mac[7], mac[8], mac[9], mac[10], mac[11]);
 
 	// check if the dst MAC is the tuntap one
 
@@ -154,7 +229,27 @@ int vpn_ws_manage_fd(int queue, int fd) {
 	// find the MAC addr in the MAC map
 	// append packet to the peer write buffer
 	// attempt to call write
-	//if (vpn_ws_write(
+	vpn_ws_peer *b_peer = vpn_ws_peer_by_mac(mac);
+	if (!b_peer) goto decapitate;
 
-	return 0;
+	int wret = vpn_ws_write(b_peer, data, data_len);
+	if (wret < 0) {
+        	vpn_ws_peer_destroy(b_peer);
+                dirty = 1;
+	}
+	else if (wret == 0) {
+		dirty = 1;
+		if (!b_peer->is_writing) {
+			if (vpn_ws_event_read_to_write(queue, b_peer->fd)) {
+				vpn_ws_peer_destroy(b_peer);
+			}
+		}
+	}
+
+decapitate:
+	memmove(peer->buf, peer->buf + ws_ret, peer->pos - ws_ret);
+	peer->pos -= ws_ret;
+	goto again;
+	// never here
+	return -1;
 }

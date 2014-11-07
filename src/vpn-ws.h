@@ -38,6 +38,12 @@ struct vpn_ws_peer {
 
 	uint8_t handshake;
 	uint8_t is_writing;
+	
+	uint8_t has_mask;
+	uint8_t mask[4];
+
+	uint8_t mac_collected;
+	uint8_t mac[6];
 
 	uint64_t rx;
 	uint64_t tx;
@@ -84,7 +90,7 @@ void vpn_ws_peer_accept(int, int);
 
 int vpn_ws_manage_fd(int, int);
 
-int vpn_ws_handshake(int, vpn_ws_peer *);
+int64_t vpn_ws_handshake(int, vpn_ws_peer *);
 char *vpn_ws_peer_get_var(vpn_ws_peer *, char *, uint16_t, uint16_t *);
 
 uint16_t vpn_ws_base64_encode(uint8_t *, uint16_t, uint8_t *);
@@ -93,6 +99,12 @@ int vpn_ws_read(vpn_ws_peer *, uint64_t);
 int vpn_ws_write(vpn_ws_peer *, uint8_t *, uint64_t);
 int vpn_ws_continue_write(vpn_ws_peer *);
 
-int vpn_ws_websocket_parse(vpn_ws_peer *);
+int64_t vpn_ws_websocket_parse(vpn_ws_peer *, uint16_t *);
 
 int vpn_ws_mac_is_broadcast(uint8_t *);
+int vpn_ws_mac_is_zero(uint8_t *);
+int vpn_ws_mac_is_valid(uint8_t *);
+int vpn_ws_mac_is_loop(uint8_t *, uint8_t *);
+int vpn_ws_mac_is_reserved(uint8_t *);
+
+vpn_ws_peer *vpn_ws_peer_by_mac(uint8_t *);

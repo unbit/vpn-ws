@@ -96,4 +96,6 @@ void vpn_ws_peer_accept(int queue, int fd) {
 	peer->fd = client_fd;
 
 	vpn_ws_conf.peers[client_fd] = peer;
+
+	fprintf(stderr, "added fd %d\n", peer->fd);
 }

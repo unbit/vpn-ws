@@ -1,10 +1,12 @@
 #include "vpn-ws.h"
 
 void vpn_ws_peer_destroy(vpn_ws_peer *peer) {
+	fprintf(stderr,"DESTROY peer %d\n", peer->fd);
 	int fd = peer->fd;
 	if (peer->buf) free(peer->buf);
 	free(peer);
 	vpn_ws_conf.peers[fd] = NULL;
+	close(fd);
 }
 
 void *vpn_ws_malloc(uint64_t amount) {

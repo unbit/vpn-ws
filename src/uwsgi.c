@@ -73,7 +73,7 @@ char *vpn_ws_peer_get_var(vpn_ws_peer *peer, char *key, uint16_t keylen, uint16_
 
 #define HTTP_RESPONSE "HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: "
 
-int vpn_ws_handshake(int queue, vpn_ws_peer *peer) {
+int64_t vpn_ws_handshake(int queue, vpn_ws_peer *peer) {
 	ssize_t rlen = vpn_ws_uwsgi_parse(peer);
 	if (rlen < 0) return -1;
 	if (rlen == 0) return 0;
