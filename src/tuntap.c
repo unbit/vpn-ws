@@ -35,4 +35,11 @@ int vpn_ws_tuntap(char *name) {
 	return -1;
 }
 
+#else
+
+int vpn_ws_tuntap(char *name) {
+	vpn_ws_error("vpn_ws_tuntap()");
+	return -1;
+}
+
 #endif

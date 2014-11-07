@@ -10,7 +10,7 @@ int main(int argc, char *argv[], char **environ) {
 	int event_queue = -1;
 	int server_fd = -1;
 	int tuntap_fd = -1;
-	char *tuntap_name = "vpn-ws\%d";
+	char *tuntap_name = NULL;
 
 	for(;;) {
 		int c = getopt_long(argc, argv, "", vpn_ws_options, &option_index);
@@ -47,18 +47,21 @@ int main(int argc, char *argv[], char **environ) {
 		vpn_ws_exit(1);
 	}
 
-	tuntap_fd = vpn_ws_tuntap(tuntap_name);
-	if (tuntap_fd < 0) {
-		vpn_ws_exit(1);
+	if (tuntap_name) {
+		tuntap_fd = vpn_ws_tuntap(tuntap_name);
+		if (tuntap_fd < 0) {
+			vpn_ws_exit(1);
+		}
+
+		if (vpn_ws_event_add_read(event_queue, tuntap_fd)) {
+			vpn_ws_exit(1);
+		}
 	}
 
 	if (vpn_ws_event_add_read(event_queue, server_fd)) {
 		vpn_ws_exit(1);
 	}
 
-	if (vpn_ws_event_add_read(event_queue, tuntap_fd)) {
-		vpn_ws_exit(1);
-	}
 
 	void *events = vpn_ws_event_events(64);
 	if (!events) {

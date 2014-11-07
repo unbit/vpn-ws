@@ -67,7 +67,7 @@ int vpn_ws_event_fd(void *events, int i) {
 	return epoll_events[i].data.fd;
 }
 
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__APPLE__)
 
 #include <sys/event.h>
 
