@@ -59,6 +59,10 @@ Quickstart (with nginx)
 
 
 ```nginx
+location /vpn {
+  include uwsgi_params;
+  uwsgi_pass unix:/run/vpn.sock;
+}
 ```
 
 Quickstart (with apache)
@@ -70,4 +74,4 @@ Status
 
 Currently only Linux has full-features support
 
-FreeBSD can be used in switch mode
+FreeBSD and OSX can be used in switch mode
