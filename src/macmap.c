@@ -42,7 +42,7 @@ int vpn_ws_mac_is_loop(uint8_t *buf1, uint8_t *buf2) {
 	return 1;
 }
 
-int vpn_ws_mac_is_reserved(uint8_t *buf) {
+int vpn_ws_mac_is_multicast(uint8_t *buf) {
 	// multicast
 	if (buf[0] == 1 && buf[1] == 0 && buf[2] == 0x5e) return 1;
 	// ipv6 multicast
