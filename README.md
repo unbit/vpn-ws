@@ -146,9 +146,15 @@ You can eventually turn off them selectively adding
 
 to the server command line
 
-Status
-======
+Status/TODO/Working on
+======================
 
 Currently only Linux has full-features support
 
 FreeBSD and OSX can be used in switch mode
+
+Currently only UNIX sockets are supported for the server
+
+The tuntap device on the server is still not implemented
+
+There is still no support for windows
