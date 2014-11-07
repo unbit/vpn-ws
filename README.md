@@ -51,8 +51,8 @@ will bind to /run/vpn.sock
 
 Now you only need to configure your webserver/proxy to route requests to /run/vpn.sock using the uwsgi protocol (see below)
 
-Clients
-=======
+Example Clients
+===============
 
 In the clients/ directory there are a bunch of clients you can run on your nodes or you can use as a base for developing more advanced ones.
 
@@ -81,6 +81,12 @@ sudo ifconfig tap0 create
 then (after having connected to the vpn server) you can assign the ip to it
 
 Remember that we are at layer-2, so if you place a dhcp server on one of those nodes it will work as expected.
+
+
+C Client
+========
+
+This is a work in progress, it will be a high-performance client (and probably the official one)
 
 Quickstart (with nginx)
 =======================
