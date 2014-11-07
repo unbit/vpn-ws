@@ -26,12 +26,40 @@ Authentication and Authorization is delegated to the proxy. We believe that batt
 
 By default only HTTPS access (eventually with client certificate authentication) should be allowed, but plain-http mode is permitted for easy debugging.
 
+Installation
+============
+
+Just run
+
+```sh
+make
+```
+
+after having cloned the repository. If all goes well you will end with a binary named
+
+```sh
+vpn-ws
+```
+
+by default the binary takes a single argument, the name of the socket to bind (the one to which the proxy will connect to)
+
+```sh
+./vpn-ws /run/vpn.sock
+```
+
+will bind to /run/vpn.sock
+
+Now you only need to configure your webserver/proxy to route requests to /run/vpn.sock using the uwsgi protocol (see below)
+
 Clients
 =======
 
 Quickstart (with nginx)
 =======================
 
+
+```nginx
+```
 
 Quickstart (with apache)
 ========================
