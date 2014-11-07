@@ -1,5 +1,7 @@
+#include <sys/types.h>
 #include <stdio.h>
 #include <fcntl.h>
+#include <netinet/in.h>
 #include <netinet/ip.h>
 #include <sys/socket.h>
 #include <string.h>

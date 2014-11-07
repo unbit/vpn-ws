@@ -26,4 +26,13 @@ int vpn_ws_tuntap(char *name) {
 	return fd;
 }
 
+#elif defined(__FreeBSD__)
+
+#include <net/if_tun.h>
+
+int vpn_ws_tuntap(char *name) {
+	vpn_ws_error("vpn_ws_tuntap()");
+	return -1;
+}
+
 #endif
