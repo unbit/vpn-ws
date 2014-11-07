@@ -39,8 +39,6 @@ int64_t vpn_ws_websocket_parse(vpn_ws_peer *peer, uint16_t *ws_header) {
 
 	*ws_header = needed;
 
-	fprintf(stderr, "OPCODE %x\n", opcode);
-
 	switch(opcode) {
 		// 0/1/2 -> forward
 		case 0:
