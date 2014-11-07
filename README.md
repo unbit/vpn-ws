@@ -54,6 +54,34 @@ Now you only need to configure your webserver/proxy to route requests to /run/vp
 Clients
 =======
 
+In the clients/ directory there are a bunch of clients you can run on your nodes or you can use as a base for developing more advanced ones.
+
+* vpn_linux_tornado.py - a linux-only client based on tornado and ws4py
+
+```sh
+sudo pip install tornado ws4py python-pytun
+sudo python clients/vpn_linux_tornado.py ws://your_server/
+```
+
+* vpn.pl - more-or-less platform independent perl client (works with OSX and FreeBSD)
+
+```sh
+sudo cpanm AnyEvent::WebSocket::Client
+sudo perl clients/vpn.pl /dev/tap0 ws://your_server/
+```
+
+for OSX you need to install the osxtuntap package (latest tested is http://sourceforge.net/projects/tuntaposx/files/tuntap/20141104/) then, after the connection to the server you need to assign the ipaddress the the interface
+
+For FreeBSD the procedure is a little bit different as you need to create the tap device before starting the client
+
+```sh
+sudo ifconfig tap0 create
+```
+
+then (after having connected to the vpn server) you can assign the ip to it
+
+Remember that we are at layer-2, so if you place a dhcp server on one of those nodes it will work as expected.
+
 Quickstart (with nginx)
 =======================
 
