@@ -133,7 +133,7 @@ Multicast and Broadcast
 
 They are both supported, (yes bonjour, mdns, samba will work !).
 
-You can eventually turn off them selectively with adding
+You can eventually turn off them selectively adding
 
 * --no-broadcast
 * --no-multicast
