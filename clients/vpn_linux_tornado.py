@@ -3,11 +3,9 @@ from ws4py.client.tornadoclient import TornadoWebSocketClient
 from pytun import TunTapDevice, IFF_TAP, IFF_NO_PI
 import sys
 
-
 io_loop = ioloop.IOLoop.instance()
 
 tap = TunTapDevice(flags=IFF_TAP|IFF_NO_PI, name='vpn-ws%d')
-print tap.mtu
 
 class VpnWSClient(TornadoWebSocketClient):
 
@@ -16,7 +14,6 @@ class VpnWSClient(TornadoWebSocketClient):
 
     def closed(self, code, reason=None):
         print "ooops"
-
 
 
 ws = VpnWSClient(sys.argv[1])
