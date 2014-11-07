@@ -1,6 +1,8 @@
 vpn-ws
 ======
 
+*** WORK In PROGRESS, THIS IS ONLY A (WORKING ;) PROTOTYPE ***
+
 A VPN system over websockets
 
 This is the server-side implementation of a layer-2 software switch able to route packets over websockets connections.
