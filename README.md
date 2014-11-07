@@ -85,6 +85,11 @@ Remember that we are at layer-2, so if you place a dhcp server on one of those n
 Quickstart (with nginx)
 =======================
 
+We create a switch-only setup (nodes will be interconnected between them but no access to the server network). Each node will be in the 192.168.173.0/24 subnet
+
+You need nginx-1.4 for proper websockets support
+
+Add the following stanza to a nginx server directive (an authenticated and https one if possibile) and reload it
 
 ```nginx
 location /vpn {
@@ -93,9 +98,41 @@ location /vpn {
 }
 ```
 
+now spawn the vpn-ws server on /run/vpn.sock (ensure to have permissions on /run, eventually change the socket path). The vpn-ws server does not need to run as root when in switch-mode as it does not require to create a tuntap device.
+
+```sh
+./vpn-ws /run/vpn.sock
+```
+
+Now your clients can connect to the nginx server (ws://server/vpn or wss://server/vpn)
+
 Quickstart (with apache)
 ========================
 
+TODO
+
+Bridge and router modes
+=======================
+
+This modes require the server to run as root as it needs to create (or bind) to a tuntap device.
+
+```sh
+sudo ./vpn-ws --tuntap vpn-ws0 /run/vpn.sock
+```
+
+this will create the vpn-ws0 interface on the server. This interface is connected to the virtual switch, so you can bridge it with another network interface in the machine or give it an address to allow the other nodes to reach it.
+
+Multicast and Broadcast
+=======================
+
+They are both supported, (yes bonjour, mdns, samba will work !).
+
+You can eventually turn off them selectively with adding
+
+* --no-broadcast
+* --no-multicast
+
+to the server command line
 
 Status
 ======
