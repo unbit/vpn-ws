@@ -10,7 +10,6 @@ ssize_t vpn_ws_uwsgi_parse(vpn_ws_peer *peer) {
 	if (peer->pos < 4) return 0;
 
 	uint16_t uwsgi_pktsize = vpn_ws_le16(peer->buf+1);
-	fprintf(stdout, "pktsize = %u\n", uwsgi_pktsize);
 	if (peer->pos < (4 + uwsgi_pktsize)) return 0;
 
 	uint8_t *pkt = peer->buf+4;
@@ -58,9 +57,8 @@ int vpn_ws_peer_add_var(vpn_ws_peer *peer, char *key, uint16_t keylen, char *val
 }
 
 char *vpn_ws_peer_get_var(vpn_ws_peer *peer, char *key, uint16_t keylen, uint16_t *vallen) {
-	uint16_t i;
+	int i;
 	if (peer->vars_n == 0) return NULL;
-
 	for(i=peer->vars_n-1;i>=0;i--) {
 		if (keylen != peer->vars[i].keylen) continue;
 		if (!memcmp(key, peer->vars[i].key, keylen)) {
