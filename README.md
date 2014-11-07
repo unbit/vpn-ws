@@ -86,7 +86,9 @@ Remember that we are at layer-2, so if you place a dhcp server on one of those n
 C Client
 ========
 
-This is a work in progress, it will be a high-performance client (and probably the official one)
+This is a work in progress, it will be a high-performance client (and probably the official one).
+
+Its code base is currently part of the test suite.
 
 Quickstart (with nginx)
 =======================
