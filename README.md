@@ -56,6 +56,8 @@ Example Clients
 
 In the clients/ directory there are a bunch of clients you can run on your nodes or you can use as a base for developing more advanced ones.
 
+Clients must run as root/sudo as they need to create/interact with tuntap devices
+
 * vpn_linux_tornado.py - a linux-only client based on tornado and ws4py
 
 ```sh
