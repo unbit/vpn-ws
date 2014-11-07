@@ -110,3 +110,5 @@ int vpn_ws_mac_is_loop(uint8_t *, uint8_t *);
 int vpn_ws_mac_is_reserved(uint8_t *);
 
 vpn_ws_peer *vpn_ws_peer_by_mac(uint8_t *);
+
+int vpn_ws_socket_nb(int);

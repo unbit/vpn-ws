@@ -42,6 +42,10 @@ int main(int argc, char *argv[], char **environ) {
 		vpn_ws_exit(1);
 	}
 
+	if (vpn_ws_socket_nb(server_fd)) {
+		vpn_ws_exit(1);
+	}
+
 	event_queue = vpn_ws_event_queue(256);
 	if (event_queue < 0) {
 		vpn_ws_exit(1);
@@ -54,6 +58,10 @@ int main(int argc, char *argv[], char **environ) {
 		}
 
 		if (vpn_ws_event_add_read(event_queue, tuntap_fd)) {
+			vpn_ws_exit(1);
+		}
+
+		if (vpn_ws_socket_nb(tuntap_fd)) {
 			vpn_ws_exit(1);
 		}
 	}
