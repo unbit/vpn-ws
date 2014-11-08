@@ -1,5 +1,5 @@
-SHARED_OBJECTS=src/socket.o src/error.o src/event.o src/tuntap.o src/memory.o src/bits.o
-OBJECTS=src/main.o $(SHARED_OBJECTS) src/io.o src/uwsgi.o src/sha1.o src/base64.o src/websocket.o src/macmap.o
+SHARED_OBJECTS=src/socket.o src/error.o src/event.o src/tuntap.o src/memory.o src/bits.o src/base64.o
+OBJECTS=src/main.o $(SHARED_OBJECTS) src/io.o src/uwsgi.o src/sha1.o src/websocket.o src/macmap.o
 
 all: vpn-ws vpn-ws-client
 
@@ -9,7 +9,7 @@ all: vpn-ws vpn-ws-client
 vpn-ws: $(OBJECTS)
 	$(CC) -Wall -Werror -g -o vpn-ws $(OBJECTS)
 
-vpn-ws-client: src/client.o $(SHARED_OBJECTS)
+vpn-ws-client: src/client.o src/ssl.o $(SHARED_OBJECTS)
 	$(CC) -Wall -Werror -g -o vpn-ws-client src/client.o  $(SHARED_OBJECTS)
 
 clean:

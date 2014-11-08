@@ -76,15 +76,22 @@ int vpn_ws_connect(char *name) {
 		return -1;
 	}
 
-	char *key = NULL;
-
+	uint8_t key[32];
+	uint8_t secret[10];
+	int i;
+	for(i=0;i<10;i++) secret[i] = rand();
+	uint16_t key_len = vpn_ws_base64_encode(secret, 10, key);
 	// now build and send the request
 	char buf[8192];
-	snprintf(buf, 8192, "GET %s HTTP/1.1\r\nHost: %s%s\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: %s\r\n\r\n",
+	snprintf(buf, 8192, "GET %s HTTP/1.1\r\nHost: %s%s%s\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: %.*s\r\n\r\n",
 		path ? path : "/",
 		domain,
-		port_str ? port_str : "",
+		port_str ? ":" : "",
+		port_str ? port_str+1 : "",
+		key_len,
 		key);
+
+	printf("%s\n", buf);
 
 	if (ssl) {
 	}
@@ -101,6 +108,11 @@ int main(int argc, char *argv[], char **environ) {
 		vpn_ws_log("syntax: %s <tap> <ws>\n", argv[0]);
 		vpn_ws_exit(1);
 	}
+
+	// initialize rnd engine
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+	srand((unsigned int) (tv.tv_usec * tv.tv_sec));
 
 	vpn_ws_conf.tuntap = argv[1];
 	vpn_ws_conf.server_addr = argv[2];
