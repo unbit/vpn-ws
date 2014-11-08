@@ -17,6 +17,7 @@
 #include <time.h>
 #include <stdarg.h>
 #include <signal.h>
+#include <sys/wait.h>
 #include "sha1.h"
 
 
