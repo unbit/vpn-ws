@@ -10,8 +10,12 @@ void vpn_ws_peer_destroy(vpn_ws_peer *peer) {
 	int fd = peer->fd;
 	if (peer->buf) free(peer->buf);
 	free(peer);
-	vpn_ws_conf.peers[fd] = NULL;
-	close(fd);
+
+	if (vpn_ws_conf.peers)
+		vpn_ws_conf.peers[fd] = NULL;
+
+	if (fd > -1)
+		close(fd);
 }
 
 void *vpn_ws_malloc(uint64_t amount) {
