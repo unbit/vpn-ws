@@ -329,6 +329,7 @@ reconnect:
 		vpn_ws_client_destroy(peer);
 		goto reconnect;
 	}
+	memcpy(peer->mac, vpn_ws_conf.tuntap_mac, 6);
 
 	struct pollfd pfd[2];
 	pfd[0].fd = peer->fd;
