@@ -72,14 +72,14 @@ int vpn_ws_manage_fd(int queue, int fd) {
 	// first of all find a valid peer
 	vpn_ws_peer *peer = vpn_ws_conf.peers[fd];
 	if (!peer) {
-		fprintf(stderr, "[BUG] fd %d not found\n", fd);
+		vpn_ws_log("[BUG] fd %d not found\n", fd);
 		close(fd);
 		return -1;
 	}
 
 	// is it valid ?
 	if (peer->fd != fd) {
-		fprintf(stderr, "[BUG] found invalid peer %d != %d \n", peer->fd, fd);
+		vpn_ws_log("[BUG] found invalid peer %d != %d \n", peer->fd, fd);
 		vpn_ws_peer_destroy(peer);
 		close(fd);
 		return -1;
@@ -164,6 +164,12 @@ again:
 	}
 	else {
 		memcpy(peer->mac, mac+6, 6);
+		vpn_ws_log("registered new peer %X:%X:%X:%X:%X:%X (fd: %d)\n", peer->mac[0],
+                        peer->mac[1],
+                        peer->mac[2],
+                        peer->mac[3],
+                        peer->mac[4],
+                        peer->mac[5], peer->fd);
 		peer->mac_collected = 1;
 	}
 
@@ -213,13 +219,6 @@ again:
 		}
 		goto decapitate;
 	}
-
-	// OR
-	//fprintf(stdout, "%x:%x:%x:%x:%x:%x %x:%x:%x:%x:%x:%x\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], mac[6], mac[7], mac[8], mac[9], mac[10], mac[11]);
-
-	// check if the dst MAC is the tuntap one
-
-	// OR
 
 	// find the MAC addr in the MAC map
 	// append packet to the peer write buffer

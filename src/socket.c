@@ -69,6 +69,55 @@ int vpn_ws_bind(char *name) {
 	return vpn_ws_bind_ipv4(name);
 }
 
+void vpn_ws_peer_create(int queue, int client_fd, uint8_t *mac) {
+	if (vpn_ws_socket_nb(client_fd)) {
+                close(client_fd);
+                return;
+        }
+
+        if (vpn_ws_event_add_read(queue, client_fd)) {
+                close(client_fd);
+                return;
+        }
+
+        // create a new peer structure
+        // we use >= so we can lazily allocate memory even if fd is 0
+        if (client_fd >= vpn_ws_conf.peers_n) {
+                void *tmp = realloc(vpn_ws_conf.peers, sizeof(vpn_ws_peer *) * (client_fd+1));
+                if (!tmp) {
+                        vpn_ws_error("vpn_ws_peer_accept()/realloc()");
+                        close(client_fd);
+                        return;
+                }
+                uint64_t delta = (client_fd+1) - vpn_ws_conf.peers_n;
+                memset(tmp + (sizeof(vpn_ws_peer *) * vpn_ws_conf.peers_n), 0, sizeof(vpn_ws_peer *) * delta);
+                vpn_ws_conf.peers_n = client_fd+1;
+                vpn_ws_conf.peers = (vpn_ws_peer **) tmp;
+        }
+
+        vpn_ws_peer *peer = vpn_ws_calloc(sizeof(vpn_ws_peer));
+        if (!peer) {
+                close(client_fd);
+                return;
+        }
+
+        peer->fd = client_fd;
+
+	if (mac) {
+		memcpy(peer->mac, mac, 6);
+		vpn_ws_log("registered new peer %X:%X:%X:%X:%X:%X (fd: %d)\n", peer->mac[0],
+			peer->mac[1],
+			peer->mac[2],
+			peer->mac[3],
+			peer->mac[4],
+			peer->mac[5], client_fd);
+		peer->mac_collected = 1;
+	}
+
+        vpn_ws_conf.peers[client_fd] = peer;
+
+}
+
 void vpn_ws_peer_accept(int queue, int fd) {
 	struct sockaddr_un s_un;
         memset(&s_un, 0, sizeof(struct sockaddr_un));
@@ -81,40 +130,5 @@ void vpn_ws_peer_accept(int queue, int fd) {
 		return;
 	}
 
-	if (vpn_ws_socket_nb(client_fd)) {
-		close(client_fd);
-		return;
-	}
-
-	if (vpn_ws_event_add_read(queue, client_fd)) {
-		close(client_fd);
-		return;
-	}
-
-	// create a new peer structure
-	// we use >= so we can lazily allocate memory even if fd is 0
-	if (client_fd >= vpn_ws_conf.peers_n) {
-		void *tmp = realloc(vpn_ws_conf.peers, sizeof(vpn_ws_peer *) * (client_fd+1));
-		if (!tmp) {
-			vpn_ws_error("vpn_ws_peer_accept()/realloc()");
-			close(client_fd);
-                	return;
-		}
-		uint64_t delta = (client_fd+1) - vpn_ws_conf.peers_n;
-		memset(tmp + (sizeof(vpn_ws_peer *) * vpn_ws_conf.peers_n), 0, sizeof(vpn_ws_peer *) * delta);
-		vpn_ws_conf.peers_n = client_fd+1;
-		vpn_ws_conf.peers = (vpn_ws_peer **) tmp;
-	}
-
-	vpn_ws_peer *peer = vpn_ws_calloc(sizeof(vpn_ws_peer));
-	if (!peer) {
-		close(client_fd);
-                return;
-	}
-
-	peer->fd = client_fd;
-
-	vpn_ws_conf.peers[client_fd] = peer;
-
-	fprintf(stderr, "added fd %d\n", peer->fd);
+	vpn_ws_peer_create(queue, client_fd, NULL);
 }

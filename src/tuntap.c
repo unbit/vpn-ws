@@ -23,6 +23,14 @@ int vpn_ws_tuntap(char *name) {
                 return -1;
         }
 
+	if (ioctl(fd, SIOCGIFHWADDR, &ifr) < 0) {
+		vpn_ws_error("vpn_ws_tuntap()/ioctl()");
+                return -1;
+	}
+
+	// copy MAC address
+	memcpy(vpn_ws_conf.tuntap_mac, ifr.ifr_hwaddr.sa_data, 6);
+
 	return fd;
 }
 

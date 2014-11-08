@@ -50,7 +50,7 @@ int64_t vpn_ws_websocket_parse(vpn_ws_peer *peer, uint16_t *ws_header) {
 			return -1;
 		// 9 -> send back a pong
 		case 9:
-			fprintf(stderr, "PONG !\n");
+			vpn_ws_log("PONG !\n");
 			return vpn_ws_websocket_pong(peer);
 		// 10 -> ignore	
 		default:

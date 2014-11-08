@@ -1,7 +1,12 @@
 #include "vpn-ws.h"
 
 void vpn_ws_peer_destroy(vpn_ws_peer *peer) {
-	fprintf(stderr,"DESTROY peer %d\n", peer->fd);
+	vpn_ws_log("removing peer %X:%X:%X:%X:%X:%X (fd: %d)\n", peer->mac[0],
+                        peer->mac[1],
+                        peer->mac[2],
+                        peer->mac[3],
+                        peer->mac[4],
+                        peer->mac[5], peer->fd);
 	int fd = peer->fd;
 	if (peer->buf) free(peer->buf);
 	free(peer);

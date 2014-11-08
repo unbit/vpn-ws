@@ -52,7 +52,6 @@ int vpn_ws_peer_add_var(vpn_ws_peer *peer, char *key, uint16_t keylen, char *val
 	peer->vars[pos].value = val;
 	peer->vars[pos].vallen = vallen;
 	peer->vars_n++;
-	fprintf(stderr, "%.*s %.*s\n", keylen, key, vallen, val);
 	return 0;
 }
 

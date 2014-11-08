@@ -23,7 +23,7 @@ int main(int argc, char *argv[], char **environ) {
 			case '?':
 				break;
 			default:
-				fprintf(stderr, "error parsing arguments\n");
+				vpn_ws_log("error parsing arguments\n");
 				vpn_ws_exit(1);
 		}
 	}
@@ -33,7 +33,7 @@ int main(int argc, char *argv[], char **environ) {
 	}
 
 	if (!vpn_ws_conf.server_addr) {
-		fprintf(stderr, "you need to specify a socket address\n");
+		vpn_ws_log("you need to specify a socket address\n");
                 vpn_ws_exit(1);
 	}
 
@@ -57,11 +57,8 @@ int main(int argc, char *argv[], char **environ) {
 			vpn_ws_exit(1);
 		}
 
-		if (vpn_ws_event_add_read(event_queue, tuntap_fd)) {
-			vpn_ws_exit(1);
-		}
-
-		if (vpn_ws_socket_nb(tuntap_fd)) {
+		vpn_ws_peer_create(event_queue, tuntap_fd, vpn_ws_conf.tuntap_mac);
+		if (!vpn_ws_conf.peers) {
 			vpn_ws_exit(1);
 		}
 	}

@@ -13,6 +13,9 @@
 #include <net/if.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
+#include <sys/time.h>
+#include <time.h>
+#include <stdarg.h>
 #include "sha1.h"
 
 
@@ -54,10 +57,18 @@ typedef struct vpn_ws_peer vpn_ws_peer;
 
 struct vpn_ws_config {
 	char *server_addr;	
+	char *tuntap;
+
+	int no_multicast;
+	int no_broadcast;
+
+	uint8_t tuntap_mac[6];
+
 	// this is the highest fd used
 	uint64_t peers_n;
 	// this memory is dynamically increased
 	vpn_ws_peer **peers;
+
 } vpn_ws_conf;
 typedef struct vpn_ws_config vpn_ws_config;
 
@@ -112,3 +123,6 @@ int vpn_ws_mac_is_multicast(uint8_t *);
 vpn_ws_peer *vpn_ws_peer_by_mac(uint8_t *);
 
 int vpn_ws_socket_nb(int);
+void vpn_ws_peer_create(int, int, uint8_t *);
+
+void vpn_ws_log(char *, ...);
