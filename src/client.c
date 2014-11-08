@@ -2,6 +2,18 @@
 
 #include <netdb.h>
 
+int vpn_ws_full_write(int fd, char *buf, size_t len) {
+	size_t remains = len;
+	char *ptr = buf;
+	while(remains > 0) {
+		ssize_t wlen = write(fd, ptr, remains);
+		if (wlen <= 0) return -1;
+		ptr += wlen;
+		remains -= wlen;
+	}
+	return 0;
+}
+
 int vpn_ws_connect(char *name) {
 	int ssl = 0;
 	uint16_t port = 80;
@@ -32,11 +44,13 @@ int vpn_ws_connect(char *name) {
 	if (slash) {
 		domain_len = slash - domain;
 		domain[domain_len] = 0;
+		path = slash + 1;
 	}
 
 	// check for basic auth
 	char *at = strchr(domain, '@');
 	if (at) {
+		*at = 0;
 		domain = at+1;
 		domain_len = strlen(domain);
 	}
@@ -76,6 +90,19 @@ int vpn_ws_connect(char *name) {
 		return -1;
 	}
 
+	char *auth = NULL;
+
+	if (at) {
+		auth = vpn_ws_calloc(23 + (strlen(at+1) * 2));
+		if (!auth) {
+			close(fd);
+                	return -1;
+		}
+		memcpy(auth, "Authorization: Basic ", 21);
+		uint16_t auth_len = vpn_ws_base64_encode((uint8_t *)at+1, strlen(at+2), (uint8_t *)auth + 21);
+		memcpy(auth + 21 + auth_len, "\r\n", 2); 
+	}
+
 	uint8_t key[32];
 	uint8_t secret[10];
 	int i;
@@ -83,26 +110,50 @@ int vpn_ws_connect(char *name) {
 	uint16_t key_len = vpn_ws_base64_encode(secret, 10, key);
 	// now build and send the request
 	char buf[8192];
-	snprintf(buf, 8192, "GET %s HTTP/1.1\r\nHost: %s%s%s\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: %.*s\r\n\r\n",
-		path ? path : "/",
+	int ret = snprintf(buf, 8192, "GET %s%s HTTP/1.1\r\nHost: %s%s%s\r\n%sUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: %.*s\r\n\r\n",
+		path ? "/" : "",
+		path ? path : "",
 		domain,
 		port_str ? ":" : "",
 		port_str ? port_str+1 : "",
+		auth ? auth : "",
 		key_len,
 		key);
+
+	if (auth) free(auth);
+
+	if (ret == 0 || ret > 8192) {
+		vpn_ws_log("vpn_ws_connect()/snprintf()");
+		close(fd);
+		return -1;
+	}
 
 	printf("%s\n", buf);
 
 	if (ssl) {
+		void *ctx = vpn_ws_ssl_handshake(fd, domain, NULL, NULL);
+		if (!ctx) {
+			close(fd);
+			return -1;
+		}
+		if (vpn_ws_ssl_write(ctx, (uint8_t *)buf, ret)) {
+			vpn_ws_ssl_close(ctx);
+			close(fd);
+			return -1;
+		}
 	}
 	else {
+		if (vpn_ws_full_write(fd, buf, ret)) {
+			close(fd);
+			return -1;
+		}
 	}
 
 	vpn_ws_log("connected to %s port %u (transport: %s)\n", domain, port, ssl ? "wss": "ws");
 	return fd;
 }
 
-int main(int argc, char *argv[], char **environ) {
+int main(int argc, char *argv[]) {
 
 	if (argc < 3) {
 		vpn_ws_log("syntax: %s <tap> <ws>\n", argv[0]);
@@ -117,18 +168,8 @@ int main(int argc, char *argv[], char **environ) {
 	vpn_ws_conf.tuntap = argv[1];
 	vpn_ws_conf.server_addr = argv[2];
 
-	int event_queue = vpn_ws_event_queue(256);
-	if (event_queue < 0) {
-		vpn_ws_exit(1);
-	}
-
 	int tuntap_fd = vpn_ws_tuntap(vpn_ws_conf.tuntap);
 	if (tuntap_fd < 0) {
-		vpn_ws_exit(1);
-	}
-
-	vpn_ws_peer_create(event_queue, tuntap_fd, vpn_ws_conf.tuntap_mac);
-	if (!vpn_ws_conf.peers) {
 		vpn_ws_exit(1);
 	}
 
@@ -137,27 +178,13 @@ int main(int argc, char *argv[], char **environ) {
 		vpn_ws_exit(1);
 	}
 
-	if (vpn_ws_socket_nb(server_fd)) {
-		vpn_ws_exit(1);
-	}
-
-	if (vpn_ws_event_add_read(event_queue, server_fd)) {
-		vpn_ws_exit(1);
-	}
-
-
-	void *events = vpn_ws_event_events(64);
-	if (!events) {
-		vpn_ws_exit(1);
-	}
-
 	for(;;) {
-		int ret = vpn_ws_event_wait(event_queue, events);
+		int ret = 0;
 		if (ret <= 0) break;
 
 		int i;
 		for(i=0;i<ret;i++) {
-			int fd = vpn_ws_event_fd(events, i);
+			int fd = 0;// vpn_ws_event_fd(events, i);
 			// event from the server ?
 			if (fd == server_fd) {
 				// rebuild websocket packet

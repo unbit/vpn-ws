@@ -12,6 +12,8 @@ int main(int argc, char *argv[], char **environ) {
 	int tuntap_fd = -1;
 	char *tuntap_name = NULL;
 
+	signal(SIGPIPE, SIG_IGN);
+
 	for(;;) {
 		int c = getopt_long(argc, argv, "", vpn_ws_options, &option_index);
 		if (c < 0) break;

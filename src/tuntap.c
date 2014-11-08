@@ -46,8 +46,12 @@ int vpn_ws_tuntap(char *name) {
 #else
 
 int vpn_ws_tuntap(char *name) {
-	vpn_ws_error("vpn_ws_tuntap()");
-	return -1;
+	int fd = open(name, O_RDWR);
+	if (fd < 0) {
+		vpn_ws_error("vpn_ws_tuntap()/open()");
+		return -1;
+	}
+	return fd;
 }
 
 #endif

@@ -128,3 +128,8 @@ int vpn_ws_socket_nb(int);
 void vpn_ws_peer_create(int, int, uint8_t *);
 
 void vpn_ws_log(char *, ...);
+
+void *vpn_ws_ssl_handshake(int, char *, char *, char *);
+int vpn_ws_ssl_write(void *, uint8_t *, uint64_t);
+int vpn_ws_ssl_read(void *, uint8_t *, uint64_t);
+void vpn_ws_ssl_close(void *);
