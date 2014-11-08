@@ -62,6 +62,8 @@ struct vpn_ws_config {
 	char *server_addr;	
 	char *tuntap;
 
+	char *exec;
+
 	int no_multicast;
 	int no_broadcast;
 
@@ -72,6 +74,8 @@ struct vpn_ws_config {
 	// this memory is dynamically increased
 	vpn_ws_peer **peers;
 
+	// used for ssl/tls context
+	void *ssl_ctx;
 } vpn_ws_conf;
 typedef struct vpn_ws_config vpn_ws_config;
 
@@ -134,3 +138,5 @@ void *vpn_ws_ssl_handshake(int, char *, char *, char *);
 int vpn_ws_ssl_write(void *, uint8_t *, uint64_t);
 int vpn_ws_ssl_read(void *, uint8_t *, uint64_t);
 void vpn_ws_ssl_close(void *);
+
+int vpn_ws_exec(char *);

@@ -1,7 +1,7 @@
 #include "vpn-ws.h"
 
 void vpn_ws_error(char *msg) {
-	vpn_ws_log("%s: %s [%s line %d]\n", msg, strerror(errno), __FILE__, __LINE__);
+	vpn_ws_log("%s: %s\n", msg, strerror(errno));
 }
 
 void vpn_ws_exit(int code) {

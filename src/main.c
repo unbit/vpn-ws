@@ -2,6 +2,7 @@
 
 static struct option vpn_ws_options[] = {
 	{"tuntap", required_argument, 0, 1 },
+	{"exec", required_argument, 0, 2 },
 	{NULL, 0, 0, 0}
 };
 
@@ -24,6 +25,10 @@ int main(int argc, char *argv[]) {
 			// tuntap
 			case 1:
 				tuntap_name = optarg;
+				break;
+			// exec
+			case 2:
+				vpn_ws_conf.exec = optarg;
 				break;
 			case '?':
 				break;
@@ -67,6 +72,12 @@ int main(int argc, char *argv[]) {
 			vpn_ws_exit(1);
 		}
 	}
+
+	if (vpn_ws_conf.exec) {
+                if (vpn_ws_exec(vpn_ws_conf.exec)) {
+                        vpn_ws_exit(1);
+                }
+        }
 
 	if (vpn_ws_event_add_read(event_queue, server_fd)) {
 		vpn_ws_exit(1);
