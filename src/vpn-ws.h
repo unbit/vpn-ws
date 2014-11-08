@@ -16,6 +16,7 @@
 #include <sys/time.h>
 #include <time.h>
 #include <stdarg.h>
+#include <sys/signal.h>
 #include "sha1.h"
 
 
