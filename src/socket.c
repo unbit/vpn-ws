@@ -112,6 +112,10 @@ void vpn_ws_peer_create(int queue, int client_fd, uint8_t *mac) {
 			peer->mac[4],
 			peer->mac[5], client_fd);
 		peer->mac_collected = 1;
+		// if we have a mac, the handshake is not needed
+                peer->handshake = 1;
+		// ... and we have a raw peer
+		peer->raw = 1;
 	}
 
         vpn_ws_conf.peers[client_fd] = peer;

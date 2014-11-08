@@ -52,6 +52,8 @@ struct vpn_ws_peer {
 
 	uint64_t rx;
 	uint64_t tx;
+
+	uint8_t raw;
 };
 typedef struct vpn_ws_peer vpn_ws_peer;
 
