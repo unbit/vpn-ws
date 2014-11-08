@@ -5,7 +5,7 @@ static struct option vpn_ws_options[] = {
 	{NULL, 0, 0, 0}
 };
 
-int main(int argc, char *argv[], char **environ) {
+int main(int argc, char *argv[]) {
 	int option_index = 0;
 	int event_queue = -1;
 	int server_fd = -1;

@@ -160,6 +160,11 @@ int main(int argc, char *argv[]) {
 		vpn_ws_exit(1);
 	}
 
+	sigset_t sset;
+        sigemptyset(&sset);
+        sigaddset(&sset, SIGPIPE);
+        sigprocmask(SIG_BLOCK, &sset, NULL);
+
 	// initialize rnd engine
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
