@@ -232,12 +232,7 @@ parsed:
 	}
 	else {
 		memcpy(peer->mac, mac+6, 6);
-		vpn_ws_log("registered new peer %X:%X:%X:%X:%X:%X (fd: %d)\n", peer->mac[0],
-                        peer->mac[1],
-                        peer->mac[2],
-                        peer->mac[3],
-                        peer->mac[4],
-                        peer->mac[5], peer->fd);
+		vpn_ws_announce_peer(peer, "registered new");
 		peer->mac_collected = 1;
 	}
 

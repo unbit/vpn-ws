@@ -141,3 +141,4 @@ int vpn_ws_ssl_read(void *, uint8_t *, uint64_t);
 void vpn_ws_ssl_close(void *);
 
 int vpn_ws_exec(char *);
+void vpn_ws_announce_peer(vpn_ws_peer *, char *);

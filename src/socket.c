@@ -91,12 +91,7 @@ void vpn_ws_peer_create(int queue, int client_fd, uint8_t *mac) {
 
 	if (mac) {
 		memcpy(peer->mac, mac, 6);
-		vpn_ws_log("registered new peer %X:%X:%X:%X:%X:%X (fd: %d)\n", peer->mac[0],
-			peer->mac[1],
-			peer->mac[2],
-			peer->mac[3],
-			peer->mac[4],
-			peer->mac[5], client_fd);
+		vpn_ws_announce_peer(peer, "registered new");
 		peer->mac_collected = 1;
 		// if we have a mac, the handshake is not needed
                 peer->handshake = 1;

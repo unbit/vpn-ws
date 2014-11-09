@@ -14,3 +14,11 @@ int vpn_ws_nb(int fd) {
         return 0;
 }
 
+void vpn_ws_announce_peer(vpn_ws_peer *peer, char *msg) {
+	vpn_ws_log("%s peer %02X:%02X:%02X:%02X:%02X:%02X (fd: %d)\n", msg, peer->mac[0],
+                        peer->mac[1],
+                        peer->mac[2],
+                        peer->mac[3],
+                        peer->mac[4],
+                        peer->mac[5], peer->fd);
+}

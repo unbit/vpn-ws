@@ -30,6 +30,7 @@ int vpn_ws_tuntap(char *name) {
 
 	// copy MAC address
 	memcpy(vpn_ws_conf.tuntap_mac, ifr.ifr_hwaddr.sa_data, 6);
+	//printf("%x %x\n", vpn_ws_conf.tuntap_mac[0], vpn_ws_conf.tuntap_mac[1]);
 
 	return fd;
 }

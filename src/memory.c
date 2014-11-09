@@ -4,12 +4,7 @@ void vpn_ws_peer_destroy(vpn_ws_peer *peer) {
 	int fd = peer->fd;
 	
 	if (fd > -1) {
-		vpn_ws_log("removing peer %2.X:%2.X:%2.X:%2.X:%2.X:%2.X (fd: %d)\n", peer->mac[0],
-                        peer->mac[1],
-                        peer->mac[2],
-                        peer->mac[3],
-                        peer->mac[4],
-                        peer->mac[5], peer->fd);
+		vpn_ws_announce_peer(peer, "removing");
 		close(fd);
 	}
 
