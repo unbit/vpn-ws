@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
 		vpn_ws_exit(1);
 	}
 
-	if (vpn_ws_socket_nb(server_fd)) {
+	if (vpn_ws_nb(server_fd)) {
 		vpn_ws_exit(1);
 	}
 

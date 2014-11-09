@@ -1,19 +1,5 @@
 #include "vpn-ws.h"
 
-int vpn_ws_socket_nb(int fd) {
-        int arg = fcntl(fd, F_GETFL, NULL);
-        if (arg < 0) {
-                vpn_ws_error("vpn_ws_socket_nb()/fcntl()");
-                return -1;
-        }
-        arg |= O_NONBLOCK;
-        if (fcntl(fd, F_SETFL, arg) < 0) {
-                vpn_ws_error("vpn_ws_socket_nb()/fcntl()");
-                return -1;
-        }
-	return 0;
-}
-
 int vpn_ws_bind_ipv6(char *name) {
 	return -1;
 }
@@ -70,7 +56,7 @@ int vpn_ws_bind(char *name) {
 }
 
 void vpn_ws_peer_create(int queue, int client_fd, uint8_t *mac) {
-	if (vpn_ws_socket_nb(client_fd)) {
+	if (vpn_ws_nb(client_fd)) {
                 close(client_fd);
                 return;
         }

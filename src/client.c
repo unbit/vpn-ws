@@ -1,7 +1,7 @@
 #include "vpn-ws.h"
 
 #include <netdb.h>
-#include <sys/poll.h>
+
 
 static struct option vpn_ws_options[] = {
         {"exec", required_argument, 0, 1 },
@@ -33,7 +33,11 @@ int vpn_ws_client_read(vpn_ws_peer *peer, uint64_t amount) {
 	else {
 		rlen = read(peer->fd, peer->buf + peer->pos, amount);
 	}
-        if (rlen <= 0) return -1;
+        if (rlen <= 0) {
+		if (rlen < 0 && (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINPROGRESS)) return 0;
+		vpn_ws_error("vpn_ws_client_read()/read()");
+		return -1;
+	}
         peer->pos += rlen;
 
         return 0;
@@ -78,6 +82,7 @@ int vpn_ws_rnrn(char *buf, size_t len) {
 	return code;
 }
 
+// here the socket is still in blocking state
 int vpn_ws_wait_101(int fd, void *ssl) {
 	char buf[8192];
 	size_t remains = 8192;
@@ -85,7 +90,10 @@ int vpn_ws_wait_101(int fd, void *ssl) {
 	for(;;) {
 		if (!ssl) {
 			ssize_t rlen = read(fd, buf + (8192-remains), remains);
-			if (rlen <= 0) return -1;
+			if (rlen <= 0) {
+				vpn_ws_error("vpn_ws_wait_101()/read()");
+				return -1;
+			}
 			remains -= rlen;
 		}
 
@@ -99,7 +107,20 @@ int vpn_ws_full_write(int fd, char *buf, size_t len) {
 	char *ptr = buf;
 	while(remains > 0) {
 		ssize_t wlen = write(fd, ptr, remains);
-		if (wlen <= 0) return -1;
+		if (wlen <= 0) {
+			if (wlen < 0 && (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINPROGRESS)) {
+				fd_set wset;
+				FD_ZERO(&wset);
+				FD_SET(fd, &wset);
+				if (select(fd+1, NULL, &wset, NULL, NULL) < 0) {
+					vpn_ws_error("vpn_ws_full_write()/select()");
+					return -1;
+				}
+				continue;
+			}
+			vpn_ws_error("vpn_ws_full_write()/write()");
+			return -1;
+		}
 		ptr += wlen;
 		remains -= wlen;
 	}
@@ -303,6 +324,10 @@ int main(int argc, char *argv[]) {
 		vpn_ws_exit(1);
 	}
 
+	if (vpn_ws_nb(tuntap_fd)) {
+		vpn_ws_exit(1);
+	}
+
 	if (vpn_ws_conf.exec) {
 		if (vpn_ws_exec(vpn_ws_conf.exec)) {
 			vpn_ws_exit(1);
@@ -330,11 +355,12 @@ reconnect:
 	}
 	memcpy(peer->mac, vpn_ws_conf.tuntap_mac, 6);
 
-	struct pollfd pfd[2];
-	pfd[0].fd = peer->fd;
-	pfd[0].events = POLLIN;
-	pfd[1].fd = tuntap_fd;
-	pfd[1].events = POLLIN;
+	if (vpn_ws_nb(peer->fd)) {
+		vpn_ws_client_destroy(peer);
+                goto reconnect;
+	}
+
+	fd_set rset;
 
 	uint8_t mask[4];
 	mask[0] = rand();
@@ -342,13 +368,23 @@ reconnect:
 	mask[2] = rand();
 	mask[3] = rand();
 
+	// find the highest fd
+	int max_fd = peer->fd;
+	if (tuntap_fd > max_fd) max_fd = tuntap_fd;
+	max_fd++;
+
 	for(;;) {
+		FD_ZERO(&rset);
+		FD_SET(peer->fd, &rset);
+		FD_SET(tuntap_fd, &rset);
+		tv.tv_sec = 17;
+		tv.tv_usec = 0;
 		// we send a websocket ping every 17 seconds (if inactive, should be enough
 		// for every proxy out there)
-		int ret = poll(pfd, 2, 17 * 1000);
+		int ret = select(max_fd, &rset, NULL, NULL, &tv);
 		if (ret < 0) {
 			// the process manager will save us here
-			vpn_ws_error("main()/poll()");
+			vpn_ws_error("main()/select()");
 			vpn_ws_exit(1);
 		}
 
@@ -360,17 +396,47 @@ reconnect:
 			}			
 		}
 
-		if (pfd[0].revents) {
-			printf("data from server\n");
+		if (FD_ISSET(peer->fd, &rset)) {
+			if (vpn_ws_client_read(peer, 8192)) {
+				vpn_ws_client_destroy(peer);
+                		goto reconnect;
+			}
+			// start getting websocket packets
+			for(;;) {
+				uint16_t ws_header = 0;
+				int64_t rlen = vpn_ws_websocket_parse(peer, &ws_header);
+				if (rlen < 0) {
+					vpn_ws_client_destroy(peer);
+                                	goto reconnect;
+				}
+				if (rlen == 0) break;
+				// is it a masked packet ?
+				uint8_t *ws = peer->buf + ws_header;
+				uint64_t ws_len = rlen - ws_header;
+				if (peer->has_mask) {
+                			uint16_t i;
+                			for (i=0;i<ws_len;i++) {
+                         			ws[i] = ws[i] ^ peer->mask[i % 4];
+                			}
+				}
+				if (vpn_ws_full_write(tuntap_fd, (char *)ws, ws_len)) {
+					// being not able to write on tuntap is really bad...
+					vpn_ws_exit(1);
+				}
+				memmove(peer->buf, peer->buf + rlen, peer->pos - rlen);
+        			peer->pos -= rlen;
+			}
 		}
 
 		
-		if (pfd[1].revents) {
+		//if (pfd[1].revents) {
+		if (FD_ISSET(tuntap_fd, &rset)) {
 			// we use this buffer for the websocket packet too
 			// 2 byte header + 2 byte size + 4 bytes masking + mtu
 			uint8_t mtu[8+1500];
 			ssize_t rlen = read(tuntap_fd, mtu+8, 1500);
 			if (rlen <= 0) {
+				if (rlen < 0 && (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINPROGRESS)) continue;
 				vpn_ws_error("main()/read()");
                         	vpn_ws_exit(1);
 			}

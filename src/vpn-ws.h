@@ -130,7 +130,7 @@ int vpn_ws_mac_is_multicast(uint8_t *);
 
 vpn_ws_peer *vpn_ws_peer_by_mac(uint8_t *);
 
-int vpn_ws_socket_nb(int);
+int vpn_ws_nb(int);
 void vpn_ws_peer_create(int, int, uint8_t *);
 
 void vpn_ws_log(char *, ...);
