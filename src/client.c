@@ -194,7 +194,7 @@ int vpn_ws_connect(char *name) {
 	// resolve the domain
 	struct hostent *he = gethostbyname(domain);
 	if (!he) {
-		vpn_ws_error("vpn_ws_connect()/gethostbyname()");
+		vpn_ws_log("vpn_ws_connect()/gethostbyname(): unable to resolve name\n");
 		return -1;
 	}
 
@@ -293,6 +293,9 @@ int main(int argc, char *argv[]) {
         sigemptyset(&sset);
         sigaddset(&sset, SIGPIPE);
         sigprocmask(SIG_BLOCK, &sset, NULL);
+#else
+	WSADATA wsaData;
+	WSAStartup(MAKEWORD(1, 1), &wsaData);
 #endif
 
 	int option_index = 0;
