@@ -93,7 +93,10 @@ int main(int argc, char *argv[]) {
 
 	for(;;) {
 		int ret = vpn_ws_event_wait(event_queue, events);
-		if (ret <= 0) break;
+		if (ret <= 0) {
+			if (ret < 0 && errno == EINTR) continue;
+			break;
+		}
 
 		int i;
 		for(i=0;i<ret;i++) {
