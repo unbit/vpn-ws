@@ -1,6 +1,12 @@
 #include "vpn-ws.h"
 
+#ifndef __WIN32__
 #include <netdb.h>
+#else
+void sleep(int n) {
+	Sleep(n * 1000);
+}
+#endif
 
 
 static struct option vpn_ws_options[] = {
@@ -282,11 +288,12 @@ int vpn_ws_connect(char *name) {
 
 int main(int argc, char *argv[]) {
 
-
+#ifndef __WIN32__
 	sigset_t sset;
         sigemptyset(&sset);
         sigaddset(&sset, SIGPIPE);
         sigprocmask(SIG_BLOCK, &sset, NULL);
+#endif
 
 	int option_index = 0;
 	for(;;) {

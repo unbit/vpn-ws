@@ -10,6 +10,11 @@ int vpn_ws_bind_ipv4(char *name) {
 
 int vpn_ws_bind_unix(char *name) {
 
+#ifdef __WIN32__
+	vpn_ws_log("UNIX domain sockets not supported on windows\n");
+	return -1;
+#else
+
 	// ignore unlink error
 	unlink(name);
 
@@ -43,6 +48,7 @@ int vpn_ws_bind_unix(char *name) {
 	}
 
 	return fd;
+#endif
 }
 
 /*
@@ -104,10 +110,17 @@ void vpn_ws_peer_create(int queue, int client_fd, uint8_t *mac) {
 }
 
 void vpn_ws_peer_accept(int queue, int fd) {
+#ifndef __WIN32__
 	struct sockaddr_un s_un;
         memset(&s_un, 0, sizeof(struct sockaddr_un));
 
 	socklen_t s_len = sizeof(struct sockaddr_un);
+#else
+	struct sockaddr_in6 s_un;
+        memset(&s_un, 0, sizeof(struct sockaddr_in6));
+
+	socklen_t s_len = sizeof(struct sockaddr_in6);
+#endif
 
 	int client_fd = accept(fd, (struct sockaddr *) &s_un, &s_len);
 	if (client_fd < 0) {

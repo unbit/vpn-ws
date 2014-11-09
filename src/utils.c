@@ -1,6 +1,7 @@
 #include "vpn-ws.h"
 
 int vpn_ws_nb(int fd) {
+#ifndef __WIN32__
         int arg = fcntl(fd, F_GETFL, NULL);
         if (arg < 0) {
                 vpn_ws_error("vpn_ws_nb()/fcntl()");
@@ -11,6 +12,7 @@ int vpn_ws_nb(int fd) {
                 vpn_ws_error("vpn_ws_nb()/fcntl()");
                 return -1;
         }
+#endif
         return 0;
 }
 

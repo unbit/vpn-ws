@@ -9,10 +9,9 @@ void vpn_ws_exit(int code) {
 }
 
 void vpn_ws_log(char *fmt, ...) {
-	struct timeval tv;
+	time_t t = time(NULL);
 	va_list args;
-	gettimeofday(&tv, NULL);
-	fprintf(stdout, "[%.*s] ", 24, ctime((const time_t *) &tv.tv_sec));
+	fprintf(stdout, "[%.*s] ", 24, ctime(&t));
 	va_start(args, fmt);
 	vfprintf(stdout, fmt, args);
 	va_end(args);

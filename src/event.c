@@ -142,4 +142,34 @@ int vpn_ws_event_fd(void *events, int i) {
         return k_events[i].ident;
 }
 
+#elif defined(__WIN32__)
+
+int vpn_ws_event_queue(int n) {
+	return -1;
+}
+
+int vpn_ws_event_read_to_write(int queue, int fd) {
+	return -1;
+}
+
+int vpn_ws_event_write_to_read(int queue, int fd) {
+	return -1;
+}
+
+int vpn_ws_event_add_read(int queue, int fd) {
+	return -1;
+}
+
+int vpn_ws_event_wait(int queue, void *events) {
+	return -1;
+}
+
+void *vpn_ws_event_events(int n) {
+	return NULL;
+}
+
+int vpn_ws_event_fd(void *events, int i) {
+	return -1;
+}
+
 #endif

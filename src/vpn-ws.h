@@ -1,23 +1,30 @@
 #include <sys/types.h>
 #include <stdio.h>
 #include <fcntl.h>
+#ifdef __WIN32__
+#include "ws2tcpip.h"
+#include "windows.h"
+#define EWOULDBLOCK EAGAIN
+#define EINPROGRESS EAGAIN
+#else
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <sys/socket.h>
+#include <sys/un.h>
+#include <net/if.h>
+#include <sys/ioctl.h>
+#include <sys/wait.h>
+#endif
 #include <string.h>
 #include <unistd.h>
-#include <sys/un.h>
 #include <errno.h>
 #include <getopt.h>
 #include <stdlib.h>
-#include <net/if.h>
-#include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <time.h>
 #include <stdarg.h>
 #include <signal.h>
-#include <sys/wait.h>
 #include "sha1.h"
 
 

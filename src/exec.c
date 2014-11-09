@@ -1,8 +1,6 @@
 #include "vpn-ws.h"
 
-#ifdef __WIN32__
-
-#else
+#ifndef __WIN32__
 
 int vpn_ws_exec(char *cmd) {
 	pid_t pid = fork();
@@ -22,7 +20,7 @@ int vpn_ws_exec(char *cmd) {
 		if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
 			return 0;
 		}
-		vpn_ws_log("vpn_ws_exec() returned non-zero code\n");
+		vpn_ws_log("vpn_ws_exec() returned non-zero code: %d\n", WEXITSTATUS(status));
 		return -1;
 	}
 
@@ -35,6 +33,36 @@ int vpn_ws_exec(char *cmd) {
 	//never here
 	vpn_ws_error("vpn_ws_exec()/execvp()");
 	vpn_ws_exit(1);
+	return -1;
+}
+
+#else
+
+int vpn_ws_exec(char *cmd) {
+	PROCESS_INFORMATION pinfo = {0};
+	DWORD code = -1;
+	BOOL result = CreateProcess(NULL, cmd,
+		NULL, NULL, FALSE,
+		NORMAL_PRIORITY_CLASS|CREATE_NO_WINDOW,
+		NULL, NULL, NULL, &pinfo);
+
+	if (!result) {
+		vpn_ws_error("vpn_ws_exec()/CreateProcess()");
+		return -1;
+	}
+
+	WaitForSingleObject(pinfo.hProcess, INFINITE);
+	result = GetExitCodeProcess(pinfo.hProcess, &code);
+	if (!result) {
+		vpn_ws_error("vpn_ws_exec()/GetExitCodeProcess()");
+		goto end;
+	}
+
+end:
+	CloseHandle(pinfo.hProcess);	
+	CloseHandle(pinfo.hThread);	
+	if (code == 0) return 0;
+	vpn_ws_log("vpn_ws_exec() returned non-zero code: %d\n", code);
 	return -1;
 }
 

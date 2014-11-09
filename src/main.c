@@ -13,10 +13,12 @@ int main(int argc, char *argv[]) {
 	int tuntap_fd = -1;
 	char *tuntap_name = NULL;
 
+#ifndef __WIN32__
 	sigset_t sset;
 	sigemptyset(&sset);
 	sigaddset(&sset, SIGPIPE);
 	sigprocmask(SIG_BLOCK, &sset, NULL);
+#endif
 
 	for(;;) {
 		int c = getopt_long(argc, argv, "", vpn_ws_options, &option_index);
