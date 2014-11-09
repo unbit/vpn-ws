@@ -335,7 +335,7 @@ vpn_ws_fd vpn_ws_connect(char *name) {
 #else
 			return NULL;
 #endif
-		
+		}		
 	}
 
 	int http_code = vpn_ws_wait_101(fd, ctx);
