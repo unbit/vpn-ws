@@ -1,7 +1,14 @@
 #include "vpn-ws.h"
 
 int vpn_ws_continue_write(vpn_ws_peer *peer) {
+#ifndef __WIN32__
 	ssize_t wlen = write(peer->fd, peer->write_buf, peer->write_pos);
+#else
+	ssize_t wlen = -1;
+	if (!WriteFile(peer->fd, peer->write_buf, peer->write_pos, (LPDWORD) &wlen, 0)) {
+		wlen = -1;
+	}
+#endif
         if (wlen < 0) {
                 if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINPROGRESS) {
                         return 0;
@@ -92,7 +99,14 @@ int vpn_ws_read(vpn_ws_peer *peer, uint64_t amount) {
 		peer->buf = tmp;
 	}
 
+#ifndef __WIN32__
 	ssize_t rlen = read(peer->fd, peer->buf + peer->pos, amount);
+#else
+	ssize_t rlen = -1;
+	if (!ReadFile(peer->fd, peer->buf + peer->pos, amount, (LPDWORD) &rlen, 0)) {
+		rlen = -1;
+	}
+#endif
 	if (rlen < 0) {
 		if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINPROGRESS) {
 			return 0;
@@ -106,16 +120,21 @@ int vpn_ws_read(vpn_ws_peer *peer, uint64_t amount) {
 	return 1;
 }
 
-int vpn_ws_manage_fd(int queue, int fd) {
+int vpn_ws_manage_fd(int queue, vpn_ws_fd fd) {
 	// when 1 invoke the event wait loop
 	int dirty = 0;
 
 	// check if the fd can be in the peers list
+#ifndef __WIN32__
 	if (fd > vpn_ws_conf.peers_n) {
 		return -1;
 	}
 	// first of all find a valid peer
 	vpn_ws_peer *peer = vpn_ws_conf.peers[fd];
+#else
+	// TODO find a solution for windows
+	vpn_ws_peer *peer = NULL;
+#endif
 	if (!peer) {
 		vpn_ws_log("[BUG] fd %d not found\n", fd);
 		close(fd);

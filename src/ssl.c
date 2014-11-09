@@ -4,7 +4,7 @@
 
 #include <Security/SecureTransport.h>
 
-void *vpn_ws_ssl_handshake(int fd, char *sni, char *key, char *crt) {
+void *vpn_ws_ssl_handshake(vpn_ws_fd fd, char *sni, char *key, char *crt) {
 	return NULL;	
 }
 
@@ -23,7 +23,7 @@ void vpn_ws_ssl_close(void *ctx) {
 
 // use openssl
 
-void *vpn_ws_ssl_handshake(int fd, char *sni, char *key, char *crt) {
+void *vpn_ws_ssl_handshake(vpn_ws_fd fd, char *sni, char *key, char *crt) {
         return NULL;
 }
 

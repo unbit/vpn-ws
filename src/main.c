@@ -9,9 +9,10 @@ static struct option vpn_ws_options[] = {
 int main(int argc, char *argv[]) {
 	int option_index = 0;
 	int event_queue = -1;
-	int server_fd = -1;
-	int tuntap_fd = -1;
 	char *tuntap_name = NULL;
+
+	vpn_ws_fd server_fd;
+	vpn_ws_fd tuntap_fd;
 
 #ifndef __WIN32__
 	sigset_t sset;
@@ -98,6 +99,7 @@ int main(int argc, char *argv[]) {
 			break;
 		}
 
+#ifndef __WIN32__
 		int i;
 		for(i=0;i<ret;i++) {
 			int fd = vpn_ws_event_fd(events, i);
@@ -110,6 +112,8 @@ int main(int argc, char *argv[]) {
 			// on peer modification, exit the cycle
 			if (vpn_ws_manage_fd(event_queue, fd)) break;
 		}
+#else
+#endif
 	}
 
 	return 0;

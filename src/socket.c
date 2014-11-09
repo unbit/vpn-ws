@@ -1,18 +1,26 @@
 #include "vpn-ws.h"
 
-int vpn_ws_bind_ipv6(char *name) {
+vpn_ws_fd vpn_ws_bind_ipv6(char *name) {
+#ifndef __WIN32__
 	return -1;
+#else
+	return NULL;
+#endif
 }
 
-int vpn_ws_bind_ipv4(char *name) {
+vpn_ws_fd vpn_ws_bind_ipv4(char *name) {
+#ifndef __WIN32__
 	return -1;
+#else
+	return NULL;
+#endif
 }
 
-int vpn_ws_bind_unix(char *name) {
+vpn_ws_fd vpn_ws_bind_unix(char *name) {
 
 #ifdef __WIN32__
 	vpn_ws_log("UNIX domain sockets not supported on windows\n");
-	return -1;
+	return NULL;
 #else
 
 	// ignore unlink error
@@ -54,14 +62,14 @@ int vpn_ws_bind_unix(char *name) {
 /*
 	this needs to manage AF_UNIX, AF_INET and AF_INET6
 */
-int vpn_ws_bind(char *name) {
+vpn_ws_fd vpn_ws_bind(char *name) {
 	char *colon = strchr(name, ':');
 	if (!colon) return vpn_ws_bind_unix(name);
 	if (name[0] == '[') return vpn_ws_bind_ipv6(name);
 	return vpn_ws_bind_ipv4(name);
 }
 
-void vpn_ws_peer_create(int queue, int client_fd, uint8_t *mac) {
+void vpn_ws_peer_create(int queue, vpn_ws_fd client_fd, uint8_t *mac) {
 	if (vpn_ws_nb(client_fd)) {
                 close(client_fd);
                 return;
@@ -74,6 +82,7 @@ void vpn_ws_peer_create(int queue, int client_fd, uint8_t *mac) {
 
         // create a new peer structure
         // we use >= so we can lazily allocate memory even if fd is 0
+#ifndef __WIN32__
         if (client_fd >= vpn_ws_conf.peers_n) {
                 void *tmp = realloc(vpn_ws_conf.peers, sizeof(vpn_ws_peer *) * (client_fd+1));
                 if (!tmp) {
@@ -86,6 +95,9 @@ void vpn_ws_peer_create(int queue, int client_fd, uint8_t *mac) {
                 vpn_ws_conf.peers_n = client_fd+1;
                 vpn_ws_conf.peers = (vpn_ws_peer **) tmp;
         }
+#else
+// TODO find a solution for windows
+#endif
 
         vpn_ws_peer *peer = vpn_ws_calloc(sizeof(vpn_ws_peer));
         if (!peer) {
@@ -105,7 +117,11 @@ void vpn_ws_peer_create(int queue, int client_fd, uint8_t *mac) {
 		peer->raw = 1;
 	}
 
+#ifndef __WIN32__
         vpn_ws_conf.peers[client_fd] = peer;
+#else
+// TODO find a solution for windows
+#endif
 
 }
 
@@ -128,5 +144,9 @@ void vpn_ws_peer_accept(int queue, int fd) {
 		return;
 	}
 
+#ifndef __WIN32__
 	vpn_ws_peer_create(queue, client_fd, NULL);
+#else
+	// TODO find a solution for windows
+#endif
 }

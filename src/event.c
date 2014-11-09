@@ -148,15 +148,15 @@ int vpn_ws_event_queue(int n) {
 	return -1;
 }
 
-int vpn_ws_event_read_to_write(int queue, int fd) {
+int vpn_ws_event_read_to_write(int queue, vpn_ws_fd fd) {
 	return -1;
 }
 
-int vpn_ws_event_write_to_read(int queue, int fd) {
+int vpn_ws_event_write_to_read(int queue, vpn_ws_fd fd) {
 	return -1;
 }
 
-int vpn_ws_event_add_read(int queue, int fd) {
+int vpn_ws_event_add_read(int queue, vpn_ws_fd fd) {
 	return -1;
 }
 

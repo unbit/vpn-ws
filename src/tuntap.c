@@ -47,6 +47,7 @@ int vpn_ws_tuntap(char *name) {
 #elif defined(__WIN32__)
 
 #include <winioctl.h>
+#include <malloc.h>
 
 #define NETWORK_CONNECTIONS_KEY "SYSTEM\\CurrentControlSet\\Control\\Network\\{4D36E972-E325-11CE-BFC1-08002BE10318}"
 
@@ -55,7 +56,7 @@ int vpn_ws_tuntap(char *name) {
 
 #define TAP_WIN_IOCTL_GET_MAC               TAP_WIN_CONTROL_CODE (1, METHOD_BUFFERED)
 
-int vpn_ws_tuntap(char *name) {
+HANDLE vpn_ws_tuntap(char *name) {
 	HANDLE handle;
 	HKEY adapter_key;
 	HKEY unit_key;
@@ -66,7 +67,7 @@ int vpn_ws_tuntap(char *name) {
 
 	if (status != ERROR_SUCCESS) {
 		vpn_ws_error("vpn_ws_tuntap()/RegOpenKeyEx()");
-		return -1;
+		return NULL;
 	}
 
 	int i = 0;
@@ -106,7 +107,6 @@ int vpn_ws_tuntap(char *name) {
 		if (!strcmp(netname, name)) {
 			char dev[256];
 			snprintf(dev, 256, "\\\\.\\Global\\%s.tap", enum_name); 
-			printf("Name = %s GUID: %s\n", netname, dev);
 			handle = CreateFile(dev,
 				GENERIC_READ|GENERIC_WRITE,
 				0, 0, OPEN_EXISTING,
@@ -121,23 +121,7 @@ int vpn_ws_tuntap(char *name) {
 				CloseHandle(handle);
 				break;
 			}
-			printf("%02X:%02X:%02X:%02X:%02X:%02X\n", vpn_ws_conf.tuntap_mac[0],
-				vpn_ws_conf.tuntap_mac[1],
-				vpn_ws_conf.tuntap_mac[2],
-				vpn_ws_conf.tuntap_mac[3],
-				vpn_ws_conf.tuntap_mac[4],
-				vpn_ws_conf.tuntap_mac[5]);
-			//RegCloseKey(adapter_key);
-			DWORD isdev = GetFileType(handle);
-			printf("isdev = %d\n", (int)isdev);
-			if (isdev == FILE_TYPE_UNKNOWN) {
-				printf("unknown file\n");
-			}
-			int fd = -1;
-			printf("new fd = %d\n", fd);
-			printf("int = %d\n", _open_osfhandle((intptr_t)handle, 0 ));
-			perror("boh");
-			return _open_osfhandle((intptr_t)handle, 0);
+			return handle;
 		}
 
 	
@@ -148,7 +132,7 @@ next:
 	}
 end:
 	RegCloseKey(adapter_key);
-	return -1;
+	return NULL;
 }
 
 #else

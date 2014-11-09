@@ -27,6 +27,13 @@
 #include <signal.h>
 #include "sha1.h"
 
+#ifndef __WIN32__
+typedef int vpn_ws_fd;
+#else
+typedef HANDLE vpn_ws_fd;
+#define close(x) CloseHandle(x)
+#endif
+
 
 struct vpn_ws_var {
 	char *key;
@@ -38,7 +45,7 @@ typedef struct vpn_ws_var vpn_ws_var;
 
 
 struct vpn_ws_peer {
-	int fd;
+	vpn_ws_fd fd;
 	uint8_t *buf;
 	uint64_t pos;
 	uint64_t len;
@@ -92,17 +99,17 @@ extern vpn_ws_config vpn_ws_conf;
 void vpn_ws_error(char *);
 void vpn_ws_exit(int);
 
-int vpn_ws_bind(char *);
+vpn_ws_fd vpn_ws_bind(char *);
 
 int vpn_ws_event_queue(int);
-int vpn_ws_event_add_read(int, int);
+int vpn_ws_event_add_read(int, vpn_ws_fd);
 int vpn_ws_event_wait(int, void *);
 void *vpn_ws_event_events(int);
 int vpn_ws_event_fd(void *, int);
-int vpn_ws_event_read_to_write(int, int);
-int vpn_ws_event_write_to_read(int, int);
+int vpn_ws_event_read_to_write(int, vpn_ws_fd);
+int vpn_ws_event_write_to_read(int, vpn_ws_fd);
 
-int vpn_ws_tuntap(char *);
+vpn_ws_fd vpn_ws_tuntap(char *);
 
 uint16_t vpn_ws_be16(uint8_t *);
 uint64_t vpn_ws_be64(uint8_t *);
@@ -116,7 +123,7 @@ void vpn_ws_peer_destroy(vpn_ws_peer *);
 
 void vpn_ws_peer_accept(int, int);
 
-int vpn_ws_manage_fd(int, int);
+int vpn_ws_manage_fd(int, vpn_ws_fd);
 
 int64_t vpn_ws_handshake(int, vpn_ws_peer *);
 char *vpn_ws_peer_get_var(vpn_ws_peer *, char *, uint16_t, uint16_t *);
@@ -137,12 +144,12 @@ int vpn_ws_mac_is_multicast(uint8_t *);
 
 vpn_ws_peer *vpn_ws_peer_by_mac(uint8_t *);
 
-int vpn_ws_nb(int);
-void vpn_ws_peer_create(int, int, uint8_t *);
+int vpn_ws_nb(vpn_ws_fd);
+void vpn_ws_peer_create(int, vpn_ws_fd, uint8_t *);
 
 void vpn_ws_log(char *, ...);
 
-void *vpn_ws_ssl_handshake(int, char *, char *, char *);
+void *vpn_ws_ssl_handshake(vpn_ws_fd, char *, char *, char *);
 int vpn_ws_ssl_write(void *, uint8_t *, uint64_t);
 int vpn_ws_ssl_read(void *, uint8_t *, uint64_t);
 void vpn_ws_ssl_close(void *);

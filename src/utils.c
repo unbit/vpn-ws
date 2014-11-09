@@ -1,6 +1,6 @@
 #include "vpn-ws.h"
 
-int vpn_ws_nb(int fd) {
+int vpn_ws_nb(vpn_ws_fd fd) {
 #ifndef __WIN32__
         int arg = fcntl(fd, F_GETFL, NULL);
         if (arg < 0) {

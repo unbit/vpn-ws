@@ -37,7 +37,13 @@ int vpn_ws_client_read(vpn_ws_peer *peer, uint64_t amount) {
 	if (vpn_ws_conf.ssl_ctx) {
 	}
 	else {
+#ifndef __WIN32__
 		rlen = read(peer->fd, peer->buf + peer->pos, amount);
+#else
+		if (!ReadFile(peer->fd, peer->buf + peer->pos, amount, (LPDWORD) &rlen, 0)) {
+			rlen = -1;
+		}
+#endif
 	}
         if (rlen <= 0) {
 		if (rlen < 0 && (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINPROGRESS)) return 0;
@@ -89,13 +95,20 @@ int vpn_ws_rnrn(char *buf, size_t len) {
 }
 
 // here the socket is still in blocking state
-int vpn_ws_wait_101(int fd, void *ssl) {
+int vpn_ws_wait_101(vpn_ws_fd fd, void *ssl) {
 	char buf[8192];
 	size_t remains = 8192;
 
 	for(;;) {
 		if (!ssl) {
+#ifndef __WIN32__
 			ssize_t rlen = read(fd, buf + (8192-remains), remains);
+#else
+			ssize_t rlen = -1;
+			if (!ReadFile(fd, buf + (8192-remains), remains, (LPDWORD) &rlen, 0)) {
+				rlen = -1;
+			}
+#endif
 			if (rlen <= 0) {
 				vpn_ws_error("vpn_ws_wait_101()/read()");
 				return -1;
@@ -108,13 +121,21 @@ int vpn_ws_wait_101(int fd, void *ssl) {
 	}
 }
 
-int vpn_ws_full_write(int fd, char *buf, size_t len) {
+int vpn_ws_full_write(vpn_ws_fd fd, char *buf, size_t len) {
 	size_t remains = len;
 	char *ptr = buf;
 	while(remains > 0) {
+#ifndef __WIN32__
 		ssize_t wlen = write(fd, ptr, remains);
+#else
+		ssize_t wlen = -1;
+		if (!WriteFile(fd, ptr, remains, (LPDWORD) &wlen, 0)) {
+			wlen = -1;
+		}
+#endif
 		if (wlen <= 0) {
 			if (wlen < 0 && (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINPROGRESS)) {
+#ifndef __WIN32__
 				fd_set wset;
 				FD_ZERO(&wset);
 				FD_SET(fd, &wset);
@@ -122,6 +143,8 @@ int vpn_ws_full_write(int fd, char *buf, size_t len) {
 					vpn_ws_error("vpn_ws_full_write()/select()");
 					return -1;
 				}
+#else
+#endif
 				continue;
 			}
 			vpn_ws_error("vpn_ws_full_write()/write()");
@@ -140,12 +163,16 @@ int vpn_ws_client_write(vpn_ws_peer *peer, uint8_t *buf, uint64_t len) {
 }
 
 
-int vpn_ws_connect(char *name) {
+vpn_ws_fd vpn_ws_connect(char *name) {
 	int ssl = 0;
 	uint16_t port = 80;
 	if (strlen(name) < 6) {
 		vpn_ws_log("invalid websocket url: %s\n", name);
+#ifndef __WIN32__
 		return -1;
+#else
+		return NULL;
+#endif
 	}
 
 	if (!strncmp(name, "wss://", 6)) {
@@ -158,7 +185,11 @@ int vpn_ws_connect(char *name) {
 	}
 	else {
 		vpn_ws_log("invalid websocket url: %s (requires ws:// or wss://)\n", name);
+#ifndef __WIN32__
 		return -1;
+#else
+		return NULL;
+#endif
 	}
 
 	char *path = NULL;
@@ -195,13 +226,21 @@ int vpn_ws_connect(char *name) {
 	struct hostent *he = gethostbyname(domain);
 	if (!he) {
 		vpn_ws_log("vpn_ws_connect()/gethostbyname(): unable to resolve name\n");
+#ifndef __WIN32__
 		return -1;
+#else
+		return NULL;
+#endif
 	}
 
-	int fd = socket(AF_INET, SOCK_STREAM, 0);
+	vpn_ws_fd fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (fd < 0) {
 		vpn_ws_error("vpn_ws_connect()/socket()");
+#ifndef __WIN32__
 		return -1;
+#else
+		return NULL;
+#endif
 	}
 
 	struct sockaddr_in sin;
@@ -213,7 +252,11 @@ int vpn_ws_connect(char *name) {
 	if (connect(fd, (struct sockaddr *) &sin, sizeof(struct sockaddr_in)) < 0) {
 		vpn_ws_error("vpn_ws_connect()/connect()");
 		close(fd);
+#ifndef __WIN32__
 		return -1;
+#else
+		return NULL;
+#endif
 	}
 
 	char *auth = NULL;
@@ -222,7 +265,11 @@ int vpn_ws_connect(char *name) {
 		auth = vpn_ws_calloc(23 + (strlen(at+1) * 2));
 		if (!auth) {
 			close(fd);
+#ifndef __WIN32__
                 	return -1;
+#else
+			return NULL;
+#endif
 		}
 		memcpy(auth, "Authorization: Basic ", 21);
 		uint16_t auth_len = vpn_ws_base64_encode((uint8_t *)at+1, strlen(at+2), (uint8_t *)auth + 21);
@@ -250,7 +297,11 @@ int vpn_ws_connect(char *name) {
 	if (ret == 0 || ret > 8192) {
 		vpn_ws_log("vpn_ws_connect()/snprintf()");
 		close(fd);
+#ifndef __WIN32__
 		return -1;
+#else
+		return NULL;
+#endif
 	}
 
 	void *ctx = NULL;
@@ -259,19 +310,32 @@ int vpn_ws_connect(char *name) {
 		ctx = vpn_ws_ssl_handshake(fd, domain, NULL, NULL);
 		if (!ctx) {
 			close(fd);
+#ifndef __WIN32__
 			return -1;
+#else
+			return NULL;
+#endif
 		}
 		if (vpn_ws_ssl_write(ctx, (uint8_t *)buf, ret)) {
 			vpn_ws_ssl_close(ctx);
 			close(fd);
+#ifndef __WIN32__
 			return -1;
+#else
+			return NULL;
+#endif
 		}
 	}
 	else {
+		printf("%.*s\n", ret, buf);
 		if (vpn_ws_full_write(fd, buf, ret)) {
 			close(fd);
+#ifndef __WIN32__
 			return -1;
-		}
+#else
+			return NULL;
+#endif
+		
 	}
 
 	int http_code = vpn_ws_wait_101(fd, ctx);
@@ -279,7 +343,11 @@ int vpn_ws_connect(char *name) {
 		vpn_ws_log("error, websocket handshake returned code: %d\n", http_code);
 		if (ctx) vpn_ws_ssl_close(ctx);
 		close(fd);
+#ifndef __WIN32__
 		return -1;
+#else
+		return NULL;
+#endif
 	}
 
 	vpn_ws_log("connected to %s port %u (transport: %s)\n", domain, port, ssl ? "wss": "ws");
@@ -329,8 +397,12 @@ int main(int argc, char *argv[]) {
 	srand((unsigned int) (tv.tv_usec * tv.tv_sec));
 
 
-	int tuntap_fd = vpn_ws_tuntap(vpn_ws_conf.tuntap);
+	vpn_ws_fd tuntap_fd = vpn_ws_tuntap(vpn_ws_conf.tuntap);
+#ifndef __WIN32__
 	if (tuntap_fd < 0) {
+#else
+	if (!tuntap_fd) {
+#endif
 		vpn_ws_exit(1);
 	}
 
@@ -370,7 +442,6 @@ reconnect:
                 goto reconnect;
 	}
 
-	fd_set rset;
 
 	uint8_t mask[4];
 	mask[0] = rand();
@@ -378,12 +449,16 @@ reconnect:
 	mask[2] = rand();
 	mask[3] = rand();
 
+#ifndef __WIN32__
+	fd_set rset;
 	// find the highest fd
 	int max_fd = peer->fd;
 	if (tuntap_fd > max_fd) max_fd = tuntap_fd;
 	max_fd++;
+#endif
 
 	for(;;) {
+#ifndef __WIN32__
 		FD_ZERO(&rset);
 		FD_SET(peer->fd, &rset);
 		FD_SET(tuntap_fd, &rset);
@@ -392,6 +467,7 @@ reconnect:
 		// we send a websocket ping every 17 seconds (if inactive, should be enough
 		// for every proxy out there)
 		int ret = select(max_fd, &rset, NULL, NULL, &tv);
+		printf("select() returned %d\n", ret);
 		if (ret < 0) {
 			// the process manager will save us here
 			vpn_ws_error("main()/select()");
@@ -407,6 +483,7 @@ reconnect:
 		}
 
 		if (FD_ISSET(peer->fd, &rset)) {
+			printf("reading data\n");
 			if (vpn_ws_client_read(peer, 8192)) {
 				vpn_ws_client_destroy(peer);
                 		goto reconnect;
@@ -429,6 +506,7 @@ reconnect:
                          			ws[i] = ws[i] ^ peer->mask[i % 4];
                 			}
 				}
+				printf("sending data\n");
 				if (vpn_ws_full_write(tuntap_fd, (char *)ws, ws_len)) {
 					// being not able to write on tuntap is really bad...
 					vpn_ws_exit(1);
@@ -481,6 +559,7 @@ reconnect:
 				}
 			}
 		}
+#endif
 
 	}
 
