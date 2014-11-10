@@ -429,6 +429,9 @@ reconnect:
 	int max_fd = peer->fd;
 	if (tuntap_fd > max_fd) max_fd = tuntap_fd;
 	max_fd++;
+#else
+	WSAEVENT ev = WSACreateEvent();
+	WSAEventSelect((SOCKET)peer->fd, ev, FD_READ);
 #endif
 
 	for(;;) {
@@ -457,7 +460,7 @@ reconnect:
 		}
 #else
 		HANDLE rset[2];
-		rset[0] = peer->fd;
+		rset[0] = ev;
 		rset[1] = tuntap_fd;
 		DWORD ret = WaitForMultipleObjects(2, rset, FALSE, 17000);
 		if (ret == WAIT_FAILED) {
