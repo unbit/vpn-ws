@@ -259,7 +259,7 @@ parsed:
 			if (b_peer->fd == peer->fd) continue;
 			// already accounted ?
 			if (!b_peer->mac_collected) continue;
-			
+
 			int wret = -1;
 			// if we are writing a websocket packet to a raw device
 			// we need to remove the websocket header
