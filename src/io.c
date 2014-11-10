@@ -92,14 +92,7 @@ int vpn_ws_read(vpn_ws_peer *peer, uint64_t amount) {
 		peer->buf = tmp;
 	}
 
-#ifndef __WIN32__
-	ssize_t rlen = read(peer->fd, peer->buf + peer->pos, amount);
-#else
-	ssize_t rlen = -1;
-	if (!ReadFile(peer->fd, peer->buf + peer->pos, amount, (LPDWORD) &rlen, 0)) {
-		rlen = -1;
-	}
-#endif
+	vpn_ws_recv(peer->fd, peer->buf + peer->pos, amount, rlen);
 	if (rlen < 0) {
 		if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINPROGRESS) {
 			return 0;

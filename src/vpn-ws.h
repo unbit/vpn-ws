@@ -29,13 +29,15 @@
 
 #ifndef __WIN32__
 typedef int vpn_ws_fd;
-#define vpn_ws_invalid_fd(x) x < 0
+#define vpn_ws_invalid_fd -1
+#define vpn_ws_is_invalid_fd(x) x < 0
 #define vpn_ws_send(x, y, z, w) ssize_t w = write(x, y, z)
 #define vpn_ws_recv(x, y, z, r) ssize_t r = read(x, y, z)
 #else
 typedef HANDLE vpn_ws_fd;
 #define close(x) CloseHandle(x)
-#define vpn_ws_invalid_fd(x) !x
+#define vpn_ws_invalid_fd NULL
+#define vpn_ws_is_invalid_fd(x) !x
 #define vpn_ws_send(x, y, z, w) ssize_t w = -1; if (!WriteFile(x, y, z, (LPDWORD) &w, 0)) { w = -1 }
 #define vpn_ws_recv(x, y, z, r) ssize_t r = -1; if (!ReadFile(x, y, z, (LPDWORD) &r, 0)) { r = -1 }
 #endif
