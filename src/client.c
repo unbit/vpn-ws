@@ -564,12 +564,11 @@ reconnect:
 #else
 		if (ret == WAIT_OBJECT_0) {
 #endif
-			printf("reading data\n");
 			if (vpn_ws_client_read(peer, 8192)) {
 				vpn_ws_client_destroy(peer);
                 		goto reconnect;
 			}
-			printf("available = %d\n", (int)peer->pos);
+			printf("WEBSOCKET = %d\n", (int)peer->pos);
 			// start getting websocket packets
 			for(;;) {
 				uint16_t ws_header = 0;
@@ -588,7 +587,7 @@ reconnect:
                          			ws[i] = ws[i] ^ peer->mask[i % 4];
                 			}
 				}
-				printf("sending data\n");
+				printf("--- TO TUNTAP %d --\n", (int) ws_len);
 				if (vpn_ws_full_write(tuntap_fd, (char *)ws, ws_len)) {
 					// being not able to write on tuntap is really bad...
 					vpn_ws_exit(1);
