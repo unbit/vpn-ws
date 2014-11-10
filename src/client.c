@@ -338,6 +338,21 @@ vpn_ws_fd vpn_ws_connect(char *name) {
 	return fd;
 }
 
+#ifdef __WIN32__
+static DWORD WINAPI _vpn_ws_tuntap_reader(LPVOID args) {
+
+	HANDLE tuntap_fd = (HANDLE) args[0];
+
+	for(;;) {
+		// 2 byte header + 2 byte size + 4 bytes masking + mtu
+        	uint8_t mtu[8+1500];
+        	vpn_ws_recv(tuntap_fd, mtu+8, 1500, rlen);
+		printf("TUNTAP RETURNED %d BYTES\n", (int) rlen);
+	}
+	
+}
+#endif
+
 int main(int argc, char *argv[]) {
 
 #ifndef __WIN32__
@@ -436,6 +451,12 @@ reconnect:
 #else
 	WSAEVENT ev = WSACreateEvent();
 	WSAEventSelect((SOCKET)peer->fd, ev, FD_READ);
+	HANDLE tuntap_thread = CreateEvent(NULL, FALSE, FALSE, NULL);
+	void *thread_args[3];
+	thread_args[0] = tuntap_fd;
+	thread_args[1] = tuntap_thread;
+	thread_args[2] = peer;
+	CreateThread(NULL, 0, _vpn_ws_tuntap_reader, thread_args, 0, NULL);
 #endif
 
 	for(;;) {
