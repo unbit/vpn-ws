@@ -339,8 +339,9 @@ vpn_ws_fd vpn_ws_connect(char *name) {
 }
 
 #ifdef __WIN32__
-static DWORD WINAPI _vpn_ws_tuntap_reader(LPVOID args) {
+static DWORD WINAPI _vpn_ws_tuntap_reader(LPVOID lp_args) {
 
+	void **args = (void **) lp_args;
 	HANDLE tuntap_fd = (HANDLE) args[0];
 
 	for(;;) {
@@ -350,6 +351,7 @@ static DWORD WINAPI _vpn_ws_tuntap_reader(LPVOID args) {
 		printf("TUNTAP RETURNED %d BYTES\n", (int) rlen);
 	}
 	
+	return 0;
 }
 #endif
 
