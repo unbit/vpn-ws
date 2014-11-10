@@ -339,12 +339,25 @@ vpn_ws_fd vpn_ws_connect(char *name) {
 }
 
 #ifdef __WIN32__
+static void _vpn_ws_mutex_lock(HANDLE mutex) {
+	DWORD ret = WaitForSingleObject(mutex, INFINITE);
+	if (ret != WAIT_OBJECT_0) {
+		vpn_ws_error("_vpn_ws_mutex_lock()/WaitForSingleObject()");
+		vpn_ws_exit(1);
+	}
+}
 static DWORD WINAPI _vpn_ws_tuntap_reader(LPVOID lp_args) {
 
 	void **args = (void **) lp_args;
 	HANDLE tuntap_fd = (HANDLE) args[0];
 	vpn_ws_peer *peer = (vpn_ws_peer *) args[1];
 	HANDLE mutex = (HANDLE) args[2];
+
+	uint8_t mask[4];
+	mask[0] = rand();
+	mask[1] = rand();
+	mask[2] = rand();
+	mask[3] = rand();
 
 	for(;;) {
 		// 2 byte header + 2 byte size + 4 bytes masking + mtu
@@ -366,20 +379,26 @@ static DWORD WINAPI _vpn_ws_tuntap_reader(LPVOID lp_args) {
                         if (rlen < 126) {
                                 mtu[2] = 0x82;
                                 mtu[3] = rlen | 0x80;
+				_vpn_ws_mutex_lock(mutex);
                                 if (vpn_ws_client_write(peer, mtu + 2, rlen + 6)) {
                                         vpn_ws_client_destroy(peer);
+					ReleaseMutex(mutex);
 					return -1;
                                 }
+				ReleaseMutex(mutex);
                         }
                         else {
                                 mtu[0] = 0x82;
                                 mtu[1] = 126 | 0x80;
                                 mtu[2] = (uint8_t) ((rlen >> 8) & 0xff);
                                 mtu[3] = (uint8_t) (rlen & 0xff);
+				_vpn_ws_mutex_lock(mutex);
                                 if (vpn_ws_client_write(peer, mtu, rlen + 8)) {
                                         vpn_ws_client_destroy(peer);
+					ReleaseMutex(mutex);
 					return -1;
                                 }
+				ReleaseMutex(mutex);
                         }
 	}
 	
@@ -471,12 +490,12 @@ reconnect:
                 goto reconnect;
 	}
 
+#ifndef __WIN32__
 	uint8_t mask[4];
 	mask[0] = rand();
 	mask[1] = rand();
 	mask[2] = rand();
 	mask[3] = rand();
-#ifndef __WIN32__
 	fd_set rset;
 	// find the highest fd
 	int max_fd = peer->fd;
@@ -518,7 +537,7 @@ reconnect:
 			}			
 		}
 #else
-		DWORD ret = WaitForSingleObjects(ev FALSE, 17000);
+		DWORD ret = WaitForSingleObject(ev, 17000);
 		if (ret == WAIT_FAILED) {
 			vpn_ws_error("main()/WaitForMultipleObjects()");
 			vpn_ws_exit(1);
