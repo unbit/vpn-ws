@@ -257,7 +257,11 @@ vpn_ws_fd vpn_ws_connect(char *name) {
 	sin.sin_port = htons(port);
 	sin.sin_addr = *((struct in_addr *) he->h_addr);
 
+#ifndef __WIN32__
+	if (connect(fd, (struct sockaddr *) &sin, sizeof(struct sockaddr_in))) {
+#else
 	if (connect((SOCKET) fd, (struct sockaddr *) &sin, sizeof(struct sockaddr_in))) {
+#endif
 		vpn_ws_error("vpn_ws_connect()/connect()");
 		close(fd);
 		return vpn_ws_invalid_fd;
