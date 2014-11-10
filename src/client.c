@@ -280,6 +280,7 @@ vpn_ws_fd vpn_ws_connect(char *name) {
 		memcpy(auth + 21 + auth_len, "\r\n", 2); 
 	}
 
+	uint8_t *mac = vpn_ws_conf.tuntap_mac;
 	uint8_t key[32];
 	uint8_t secret[10];
 	int i;
@@ -287,14 +288,21 @@ vpn_ws_fd vpn_ws_connect(char *name) {
 	uint16_t key_len = vpn_ws_base64_encode(secret, 10, key);
 	// now build and send the request
 	char buf[8192];
-	int ret = snprintf(buf, 8192, "GET /%s HTTP/1.1\r\nHost: %s%s%s\r\n%sUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: %.*s\r\n\r\n",
+	int ret = snprintf(buf, 8192, "GET /%s HTTP/1.1\r\nHost: %s%s%s\r\n%sUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: %.*s\r\nX-vpn-ws-MAC: %02x:%02x:%02x:%02x:%02x:%02x\r\n\r\n",
 		path ? path : "",
 		domain,
 		port_str ? ":" : "",
 		port_str ? port_str+1 : "",
 		auth ? auth : "",
 		key_len,
-		key);
+		key,
+		mac[0],	
+		mac[1],	
+		mac[2],	
+		mac[3],	
+		mac[4],
+		mac[5]
+	);
 
 	if (auth) free(auth);
 
@@ -537,7 +545,6 @@ reconnect:
 		// we send a websocket ping every 17 seconds (if inactive, should be enough
 		// for every proxy out there)
 		int ret = select(max_fd, &rset, NULL, NULL, &tv);
-		printf("select() returned %d\n", ret);
 		if (ret < 0) {
 			// the process manager will save us here
 			vpn_ws_error("main()/select()");
@@ -546,6 +553,7 @@ reconnect:
 
 		// too much inactivity, send a ping
 		if (ret == 0) {
+			printf("sending PING\n");
 			if (vpn_ws_client_write(peer, (uint8_t *) "\x89\x00", 2)) {
 				vpn_ws_client_destroy(peer);
                 		goto reconnect;
@@ -568,7 +576,6 @@ reconnect:
 				vpn_ws_client_destroy(peer);
                 		goto reconnect;
 			}
-			printf("WEBSOCKET = %d\n", (int)peer->pos);
 			// start getting websocket packets
 			for(;;) {
 				uint16_t ws_header = 0;
@@ -587,7 +594,6 @@ reconnect:
                          			ws[i] = ws[i] ^ peer->mask[i % 4];
                 			}
 				}
-				printf("--- TO TUNTAP %d --\n", (int) ws_len);
 				if (vpn_ws_full_write(tuntap_fd, (char *)ws, ws_len)) {
 					// being not able to write on tuntap is really bad...
 					vpn_ws_exit(1);
@@ -600,7 +606,6 @@ reconnect:
 		
 #ifndef __WIN32__
 		if (FD_ISSET(tuntap_fd, &rset)) {
-			printf("data from tuntap\n");
 			// we use this buffer for the websocket packet too
 			// 2 byte header + 2 byte size + 4 bytes masking + mtu
 			uint8_t mtu[8+1500];

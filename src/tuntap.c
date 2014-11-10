@@ -1,5 +1,10 @@
 #include "vpn-ws.h"
 
+#ifdef __APPLE__
+#include <net/if_dl.h>
+#include <sys/sysctl.h>
+#endif
+
 #if defined(__linux__)
 
 #include <linux/if_tun.h>
@@ -33,15 +38,6 @@ int vpn_ws_tuntap(char *name) {
 	//printf("%x %x\n", vpn_ws_conf.tuntap_mac[0], vpn_ws_conf.tuntap_mac[1]);
 
 	return fd;
-}
-
-#elif defined(__FreeBSD__)
-
-#include <net/if_tun.h>
-
-int vpn_ws_tuntap(char *name) {
-	vpn_ws_error("vpn_ws_tuntap()");
-	return -1;
 }
 
 #elif defined(__WIN32__)
@@ -153,6 +149,47 @@ int vpn_ws_tuntap(char *name) {
 		vpn_ws_error("vpn_ws_tuntap()/open()");
 		return -1;
 	}
+
+#ifdef __APPLE__
+	int mib[6];
+	mib[0] = CTL_NET;
+	mib[1] = AF_ROUTE;
+	mib[2] = 0;
+	mib[3] = AF_LINK;
+	mib[4] = NET_RT_IFLIST;
+	mib[5] = if_nametoindex(name+5);
+	if (!mib[5]) {
+		vpn_ws_error("vpn_ws_tuntap()/if_nametoindex()");
+		close(fd);
+		return -1;
+	}
+
+	size_t len;
+	if (sysctl(mib, 6, NULL, &len, NULL, 0) < 0) {
+		vpn_ws_error("vpn_ws_tuntap()/sysctl()");
+                close(fd);
+                return -1;
+	}
+
+	char *buf = vpn_ws_malloc(len);
+	if (!buf) {
+		close(fd);
+		return -1;
+	}
+
+	if (sysctl(mib, 6, buf, &len, NULL, 0) < 0) {
+		vpn_ws_error("vpn_ws_tuntap()/sysctl()");
+                close(fd);
+                return -1;
+	}
+
+	struct if_msghdr *ifm = (struct if_msghdr *)buf;
+	struct sockaddr_dl *sdl = (struct sockaddr_dl *)(ifm + 1);
+	uint8_t *ptr = (uint8_t *)LLADDR(sdl);
+        // copy MAC address
+        memcpy(vpn_ws_conf.tuntap_mac, ptr, 6);
+#endif
+
 	return fd;
 }
 
