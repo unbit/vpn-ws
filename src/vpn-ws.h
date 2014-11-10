@@ -2,8 +2,10 @@
 #include <stdio.h>
 #include <fcntl.h>
 #ifdef __WIN32__
+#include "winsock2.h"
 #include "ws2tcpip.h"
-#include "windows.h"
+#include "ws2spi.h"
+//#include "windows.h"
 #define EWOULDBLOCK EAGAIN
 #define EINPROGRESS EAGAIN
 #else
@@ -38,8 +40,8 @@ typedef HANDLE vpn_ws_fd;
 #define close(x) CloseHandle(x)
 #define vpn_ws_invalid_fd NULL
 #define vpn_ws_is_invalid_fd(x) !x
-#define vpn_ws_send(x, y, z, w) ssize_t w = -1; if (!WriteFile(x, y, z, (LPDWORD) &w, 0)) { w = -1 }
-#define vpn_ws_recv(x, y, z, r) ssize_t r = -1; if (!ReadFile(x, y, z, (LPDWORD) &r, 0)) { r = -1 }
+#define vpn_ws_send(x, y, z, w) ssize_t w = -1; if (!WriteFile(x, y, z, (LPDWORD) &w, 0)) { w = -1; }
+#define vpn_ws_recv(x, y, z, r) ssize_t r = -1; if (!ReadFile(x, y, z, (LPDWORD) &r, 0)) { r = -1; }
 #endif
 
 

@@ -14,6 +14,50 @@ static struct option vpn_ws_options[] = {
         {NULL, 0, 0, 0}
 };
 
+#ifdef __WIN32__
+static HANDLE _vpn_ws_win32_socket(int family, int type, int protocol) {
+	unsigned long pblen = 0;
+	SOCKET ret;
+	WSAPROTOCOL_INFOW *pbuff;
+	WSAPROTOCOL_INFOA pinfo;
+	int nprotos, i, err;
+
+	if (WSCEnumProtocols(NULL, NULL, &pblen, &err) != SOCKET_ERROR) {
+		vpn_ws_log("no socket protocols available");
+		return NULL;
+	}
+
+	if (err != WSAENOBUFS) {
+		vpn_ws_error("WSCEnumProtocols()");
+		return NULL;
+	}
+
+	pbuff = vpn_ws_malloc(pblen);
+	if ((nprotos = WSCEnumProtocols(NULL, pbuff, &pblen, &err)) == SOCKET_ERROR) {
+		vpn_ws_error("WSCEnumProtocols()");
+		return NULL;
+	}
+
+	for (i = 0; i < nprotos; i++) {
+		if (pbuff[i].iAddressFamily != family) continue;
+		if (pbuff[i].iSocketType != type) continue;
+		if (!(pbuff[i].dwServiceFlags1 & XP1_IFS_HANDLES))
+			continue;
+
+		memcpy(&pinfo, pbuff + i, sizeof(pinfo));
+		wcstombs(pinfo.szProtocol, pbuff[i].szProtocol, sizeof(pinfo.szProtocol));
+		free(pbuff);
+		if ((ret = WSASocket(family, type, protocol, &pinfo, 0, 0)) == INVALID_SOCKET) {
+			vpn_ws_error("WSASocket()");
+			return NULL;
+		}
+		return (HANDLE) ret;
+	}
+	free(pbuff);
+	return NULL;
+}
+#endif
+
 void vpn_ws_client_destroy(vpn_ws_peer *peer) {
 	if (vpn_ws_conf.ssl_ctx) {
 		vpn_ws_ssl_close(vpn_ws_conf.ssl_ctx);
@@ -197,8 +241,12 @@ vpn_ws_fd vpn_ws_connect(char *name) {
 		return vpn_ws_invalid_fd;
 	}
 
+#ifndef __WIN32__
 	vpn_ws_fd fd = socket(AF_INET, SOCK_STREAM, 0);
-	if (fd < 0) {
+#else
+	vpn_ws_fd fd = _vpn_ws_win32_socket(AF_INET, SOCK_STREAM, 0);
+#endif
+	if (vpn_ws_is_invalid_fd(fd)) {
 		vpn_ws_error("vpn_ws_connect()/socket()");
 		return vpn_ws_invalid_fd;
 	}
@@ -209,7 +257,7 @@ vpn_ws_fd vpn_ws_connect(char *name) {
 	sin.sin_port = htons(port);
 	sin.sin_addr = *((struct in_addr *) he->h_addr);
 
-	if (connect(fd, (struct sockaddr *) &sin, sizeof(struct sockaddr_in)) < 0) {
+	if (connect((SOCKET) fd, (struct sockaddr *) &sin, sizeof(struct sockaddr_in))) {
 		vpn_ws_error("vpn_ws_connect()/connect()");
 		close(fd);
 		return vpn_ws_invalid_fd;
@@ -370,13 +418,11 @@ reconnect:
                 goto reconnect;
 	}
 
-
 	uint8_t mask[4];
 	mask[0] = rand();
 	mask[1] = rand();
 	mask[2] = rand();
 	mask[3] = rand();
-
 #ifndef __WIN32__
 	fd_set rset;
 	// find the highest fd
@@ -409,13 +455,28 @@ reconnect:
                 		goto reconnect;
 			}			
 		}
+#else
+		HANDLE rset[2];
+		rset[0] = peer->fd;
+		rset[1] = tuntap_fd;
+		DWORD ret = WaitForMultipleObjects(2, rset, FALSE, 17000);
+		if (ret == WAIT_FAILED) {
+			vpn_ws_error("main()/WaitForMultipleObjects()");
+			vpn_ws_exit(1);
+		}
+#endif
 
+#ifndef __WIN32__
 		if (FD_ISSET(peer->fd, &rset)) {
+#else
+		if (ret == WAIT_OBJECT_0) {
+#endif
 			printf("reading data\n");
 			if (vpn_ws_client_read(peer, 8192)) {
 				vpn_ws_client_destroy(peer);
                 		goto reconnect;
 			}
+			printf("available = %d\n", (int)peer->pos);
 			// start getting websocket packets
 			for(;;) {
 				uint16_t ws_header = 0;
@@ -445,12 +506,16 @@ reconnect:
 		}
 
 		
-		//if (pfd[1].revents) {
+#ifndef __WIN32__
 		if (FD_ISSET(tuntap_fd, &rset)) {
+#else
+		if (ret == WAIT_OBJECT_0+1) {
+#endif
+			printf("data from tuntap\n");
 			// we use this buffer for the websocket packet too
 			// 2 byte header + 2 byte size + 4 bytes masking + mtu
 			uint8_t mtu[8+1500];
-			ssize_t rlen = read(tuntap_fd, mtu+8, 1500);
+			vpn_ws_recv(tuntap_fd, mtu+8, 1500, rlen);
 			if (rlen <= 0) {
 				if (rlen < 0 && (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINPROGRESS)) continue;
 				vpn_ws_error("main()/read()");
@@ -487,7 +552,6 @@ reconnect:
 				}
 			}
 		}
-#endif
 
 	}
 

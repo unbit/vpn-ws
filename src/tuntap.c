@@ -56,6 +56,9 @@ int vpn_ws_tuntap(char *name) {
 
 #define TAP_WIN_IOCTL_GET_MAC               TAP_WIN_CONTROL_CODE (1, METHOD_BUFFERED)
 
+#define TAP_WIN_IOCTL_SET_MEDIA_STATUS      TAP_WIN_CONTROL_CODE (6, METHOD_BUFFERED)
+
+
 HANDLE vpn_ws_tuntap(char *name) {
 	HANDLE handle;
 	HKEY adapter_key;
@@ -117,6 +120,13 @@ HANDLE vpn_ws_tuntap(char *name) {
 			}
 
 			if (!DeviceIoControl(handle, TAP_WIN_IOCTL_GET_MAC, vpn_ws_conf.tuntap_mac, 6, vpn_ws_conf.tuntap_mac, 6, &len, NULL)) {
+				vpn_ws_error("vpn_ws_tuntap()/DeviceIoControl()");
+				CloseHandle(handle);
+				break;
+			}
+
+			ULONG status = TRUE;
+			if (!DeviceIoControl(handle, TAP_WIN_IOCTL_SET_MEDIA_STATUS, &status, sizeof(status), &status, sizeof(status), &len, NULL)) {
 				vpn_ws_error("vpn_ws_tuntap()/DeviceIoControl()");
 				CloseHandle(handle);
 				break;
