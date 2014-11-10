@@ -7,7 +7,7 @@ endif
 
 all: vpn-ws vpn-ws-client
 
-.c.o:
+src/%.o: src/%.c src/vpn-ws.h
 	$(CC) $(CFLAGS) -Wall -Werror -g -c -o $@ $<
 
 vpn-ws: $(OBJECTS)
