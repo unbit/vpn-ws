@@ -343,12 +343,44 @@ static DWORD WINAPI _vpn_ws_tuntap_reader(LPVOID lp_args) {
 
 	void **args = (void **) lp_args;
 	HANDLE tuntap_fd = (HANDLE) args[0];
+	vpn_ws_peer *peer = (vpn_ws_peer *) args[1];
+	HANDLE mutex = (HANDLE) args[2];
 
 	for(;;) {
 		// 2 byte header + 2 byte size + 4 bytes masking + mtu
         	uint8_t mtu[8+1500];
         	vpn_ws_recv(tuntap_fd, mtu+8, 1500, rlen);
 		printf("TUNTAP RETURNED %d BYTES\n", (int) rlen);
+
+		// mask packet
+                        ssize_t i;
+                        for (i=0;i<rlen;i++) {
+                                mtu[8+i] = mtu[8+i] ^ mask[i % 4];
+                        }
+
+                        mtu[4] = mask[0];
+                        mtu[5] = mask[1];
+                        mtu[6] = mask[2];
+                        mtu[7] = mask[3];
+
+                        if (rlen < 126) {
+                                mtu[2] = 0x82;
+                                mtu[3] = rlen | 0x80;
+                                if (vpn_ws_client_write(peer, mtu + 2, rlen + 6)) {
+                                        vpn_ws_client_destroy(peer);
+					return -1;
+                                }
+                        }
+                        else {
+                                mtu[0] = 0x82;
+                                mtu[1] = 126 | 0x80;
+                                mtu[2] = (uint8_t) ((rlen >> 8) & 0xff);
+                                mtu[3] = (uint8_t) (rlen & 0xff);
+                                if (vpn_ws_client_write(peer, mtu, rlen + 8)) {
+                                        vpn_ws_client_destroy(peer);
+					return -1;
+                                }
+                        }
 	}
 	
 	return 0;
@@ -453,11 +485,11 @@ reconnect:
 #else
 	WSAEVENT ev = WSACreateEvent();
 	WSAEventSelect((SOCKET)peer->fd, ev, FD_READ);
-	HANDLE tuntap_thread = CreateEvent(NULL, FALSE, FALSE, NULL);
+	HANDLE mutex = CreateMutex(NULL, FALSE, NULL);
 	void *thread_args[3];
 	thread_args[0] = tuntap_fd;
-	thread_args[1] = tuntap_thread;
-	thread_args[2] = peer;
+	thread_args[1] = peer;
+	thread_args[2] = mutex;
 	CreateThread(NULL, 0, _vpn_ws_tuntap_reader, thread_args, 0, NULL);
 #endif
 
@@ -486,10 +518,7 @@ reconnect:
 			}			
 		}
 #else
-		HANDLE rset[2];
-		rset[0] = ev;
-		rset[1] = tuntap_fd;
-		DWORD ret = WaitForMultipleObjects(2, rset, FALSE, 17000);
+		DWORD ret = WaitForSingleObjects(ev FALSE, 17000);
 		if (ret == WAIT_FAILED) {
 			vpn_ws_error("main()/WaitForMultipleObjects()");
 			vpn_ws_exit(1);
@@ -538,9 +567,6 @@ reconnect:
 		
 #ifndef __WIN32__
 		if (FD_ISSET(tuntap_fd, &rset)) {
-#else
-		if (ret == WAIT_OBJECT_0+1) {
-#endif
 			printf("data from tuntap\n");
 			// we use this buffer for the websocket packet too
 			// 2 byte header + 2 byte size + 4 bytes masking + mtu
@@ -582,6 +608,7 @@ reconnect:
 				}
 			}
 		}
+#endif
 
 	}
 
