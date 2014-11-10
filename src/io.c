@@ -1,14 +1,7 @@
 #include "vpn-ws.h"
 
 int vpn_ws_continue_write(vpn_ws_peer *peer) {
-#ifndef __WIN32__
-	ssize_t wlen = write(peer->fd, peer->write_buf, peer->write_pos);
-#else
-	ssize_t wlen = -1;
-	if (!WriteFile(peer->fd, peer->write_buf, peer->write_pos, (LPDWORD) &wlen, 0)) {
-		wlen = -1;
-	}
-#endif
+	vpn_ws_send(peer->fd, peer->write_buf, peer->write_pos, wlen);
         if (wlen < 0) {
                 if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINPROGRESS) {
                         return 0;
