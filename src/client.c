@@ -365,6 +365,21 @@ static DWORD WINAPI _vpn_ws_tuntap_reader(LPVOID lp_args) {
         	vpn_ws_recv(tuntap_fd, mtu+8, 1500, rlen);
 		printf("TUNTAP RETURNED %d BYTES\n", (int) rlen);
 
+		uint8_t *xmtu = mtu+8;
+		printf("%02x:%02x:%02x:%02x:%02x:%02x %02x:%02x:%02x:%02x:%02x:%02x\n",
+			xmtu[0],
+			xmtu[1],
+			xmtu[2],
+			xmtu[3],
+			xmtu[4],
+			xmtu[5],
+			xmtu[6],
+			xmtu[7],
+			xmtu[8],
+			xmtu[9],
+			xmtu[10],
+			xmtu[11]);
+
 		// mask packet
                         ssize_t i;
                         for (i=0;i<rlen;i++) {
