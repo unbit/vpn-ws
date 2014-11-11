@@ -487,7 +487,7 @@ reconnect:
 			}			
 		}
 #else
-		DWORD ret = WaitForMultipleObjects(waiting_objects, 2, FALSE, 17000);
+		DWORD ret = WaitForMultipleObjects(2, waiting_objects, FALSE, 17000);
 		if (ret == WAIT_FAILED) {
 			vpn_ws_error("main()/WaitForMultipleObjects()");
 			vpn_ws_exit(1);
@@ -527,14 +527,15 @@ reconnect:
 					vpn_ws_exit(1);
 				}
 #else
+			printf("event from socket, writing %d\n", (int)ws_len);
 				OVERLAPPED overlapped_write = {0};
 				ssize_t wlen = -1;
-				if (!WriteFile(tuntap_fd, ws, ws_len, &wlen, &overlapped_write)) {
+				if (!WriteFile(tuntap_fd, ws, ws_len, (LPDWORD) &wlen, &overlapped_write)) {
 					if (GetLastError() != ERROR_IO_PENDING) {
 						vpn_ws_error("main()/WriteFile()");
 						vpn_ws_exit(1);
 					}
-					if (!GetOverlappedResult(tuntap_fd, &overlapped_write, &wlen, TRUE)) {
+					if (!GetOverlappedResult(tuntap_fd, &overlapped_write, (LPDWORD) &wlen, TRUE)) {
 						vpn_ws_error("main()/GetOverlappedResult()");
                                         	vpn_ws_exit(1);
 					}	
@@ -575,13 +576,15 @@ reconnect:
 				tuntap_is_reading = 0;
 			}
 			else {
-				if (!GetOverlappedResult(tuntap_fd, &overlapped_read, &rlen, TRUE)) {
+				if (!GetOverlappedResult(tuntap_fd, &overlapped_read, (LPDWORD)&rlen, TRUE)) {
 					vpn_ws_error("main()/GetOverlappedResult()");
 					vpn_ws_exit(1);
 				}
 				tuntap_is_reading = 0;
 			}
 #endif
+
+			printf("event from tuntap %d bytes\n", (int) rlen);
 
 			// mask packet
 			ssize_t i;
