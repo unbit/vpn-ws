@@ -14,6 +14,8 @@ int main(int argc, char *argv[]) {
 	vpn_ws_fd server_fd;
 	vpn_ws_fd tuntap_fd;
 
+	setbuf(stdout, NULL);
+
 #ifndef __WIN32__
 	sigset_t sset;
 	sigemptyset(&sset);
