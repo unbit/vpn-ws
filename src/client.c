@@ -449,7 +449,8 @@ reconnect:
 #else
 	WSAEVENT ev = WSACreateEvent();
 	WSAEventSelect((SOCKET)peer->fd, ev, FD_READ);
-	OVERLAPPED overlapped_read = {0};
+	OVERLAPPED overlapped_read;
+	memset(&overlapped_read, 0, sizeof(OVERLAPPED));
 	overlapped_read.hEvent = CreateEvent(NULL, TRUE, TRUE, NULL);
 	if (!overlapped_read.hEvent) {
 		vpn_ws_error("main()/CreateEvent()");
@@ -540,9 +541,6 @@ reconnect:
                                         	vpn_ws_exit(1);
 					}	
 				}	
-				if (wlen != ws_len) {
-				printf("WLEN = %d\n", (int) wlen);
-				}
 #endif
 
 				memmove(peer->buf, peer->buf + rlen, peer->pos - rlen);
