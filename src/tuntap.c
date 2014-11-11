@@ -109,7 +109,7 @@ HANDLE vpn_ws_tuntap(char *name) {
 			handle = CreateFile(dev,
 				GENERIC_READ|GENERIC_WRITE,
 				0, 0, OPEN_EXISTING,
-				FILE_ATTRIBUTE_SYSTEM, 0);
+				FILE_ATTRIBUTE_SYSTEM|FILE_FLAG_OVERLAPPED, 0);
 			if (handle == INVALID_HANDLE_VALUE) {
 				vpn_ws_error("vpn_ws_tuntap()/CreateFile()");
 				break;

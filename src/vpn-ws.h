@@ -5,7 +5,6 @@
 #include "winsock2.h"
 #include "ws2tcpip.h"
 #include "ws2spi.h"
-//#include "windows.h"
 #define EWOULDBLOCK EAGAIN
 #define EINPROGRESS EAGAIN
 #else
@@ -37,6 +36,7 @@ typedef int vpn_ws_fd;
 #define vpn_ws_recv(x, y, z, r) ssize_t r = read(x, y, z)
 #else
 typedef HANDLE vpn_ws_fd;
+#define sleep(x) Sleep(x * 1000);
 #define close(x) CloseHandle(x)
 #define vpn_ws_invalid_fd NULL
 #define vpn_ws_is_invalid_fd(x) !x

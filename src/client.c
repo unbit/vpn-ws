@@ -2,10 +2,6 @@
 
 #ifndef __WIN32__
 #include <netdb.h>
-#else
-void sleep(int n) {
-	Sleep(n * 1000);
-}
 #endif
 
 
@@ -15,6 +11,9 @@ static struct option vpn_ws_options[] = {
 };
 
 #ifdef __WIN32__
+/*
+	The amount of code here for opening a socket is astonishing....
+*/
 static HANDLE _vpn_ws_win32_socket(int family, int type, int protocol) {
 	unsigned long pblen = 0;
 	SOCKET ret;
@@ -350,89 +349,6 @@ vpn_ws_fd vpn_ws_connect(char *name) {
 	return fd;
 }
 
-#ifdef __WIN32__
-static void _vpn_ws_mutex_lock(HANDLE mutex) {
-	DWORD ret = WaitForSingleObject(mutex, INFINITE);
-	if (ret != WAIT_OBJECT_0) {
-		vpn_ws_error("_vpn_ws_mutex_lock()/WaitForSingleObject()");
-		vpn_ws_exit(1);
-	}
-}
-static DWORD WINAPI _vpn_ws_tuntap_reader(LPVOID lp_args) {
-
-	void **args = (void **) lp_args;
-	HANDLE tuntap_fd = (HANDLE) args[0];
-	vpn_ws_peer *peer = (vpn_ws_peer *) args[1];
-	HANDLE mutex = (HANDLE) args[2];
-
-	uint8_t mask[4];
-	mask[0] = rand();
-	mask[1] = rand();
-	mask[2] = rand();
-	mask[3] = rand();
-
-	for(;;) {
-		// 2 byte header + 2 byte size + 4 bytes masking + mtu
-        	uint8_t mtu[8+1500];
-        	vpn_ws_recv(tuntap_fd, mtu+8, 1500, rlen);
-		printf("TUNTAP RETURNED %d BYTES\n", (int) rlen);
-
-		uint8_t *xmtu = mtu+8;
-		printf("%02x:%02x:%02x:%02x:%02x:%02x %02x:%02x:%02x:%02x:%02x:%02x\n",
-			xmtu[0],
-			xmtu[1],
-			xmtu[2],
-			xmtu[3],
-			xmtu[4],
-			xmtu[5],
-			xmtu[6],
-			xmtu[7],
-			xmtu[8],
-			xmtu[9],
-			xmtu[10],
-			xmtu[11]);
-
-		// mask packet
-                        ssize_t i;
-                        for (i=0;i<rlen;i++) {
-                                mtu[8+i] = mtu[8+i] ^ mask[i % 4];
-                        }
-
-                        mtu[4] = mask[0];
-                        mtu[5] = mask[1];
-                        mtu[6] = mask[2];
-                        mtu[7] = mask[3];
-
-                        if (rlen < 126) {
-                                mtu[2] = 0x82;
-                                mtu[3] = rlen | 0x80;
-				_vpn_ws_mutex_lock(mutex);
-                                if (vpn_ws_client_write(peer, mtu + 2, rlen + 6)) {
-                                        vpn_ws_client_destroy(peer);
-					ReleaseMutex(mutex);
-					return -1;
-                                }
-				ReleaseMutex(mutex);
-                        }
-                        else {
-                                mtu[0] = 0x82;
-                                mtu[1] = 126 | 0x80;
-                                mtu[2] = (uint8_t) ((rlen >> 8) & 0xff);
-                                mtu[3] = (uint8_t) (rlen & 0xff);
-				_vpn_ws_mutex_lock(mutex);
-                                if (vpn_ws_client_write(peer, mtu, rlen + 8)) {
-                                        vpn_ws_client_destroy(peer);
-					ReleaseMutex(mutex);
-					return -1;
-                                }
-				ReleaseMutex(mutex);
-                        }
-	}
-	
-	return 0;
-}
-#endif
-
 int main(int argc, char *argv[]) {
 
 #ifndef __WIN32__
@@ -441,6 +357,7 @@ int main(int argc, char *argv[]) {
         sigaddset(&sset, SIGPIPE);
         sigprocmask(SIG_BLOCK, &sset, NULL);
 #else
+	// initialize winsock2
 	WSADATA wsaData;
 	WSAStartup(MAKEWORD(1, 1), &wsaData);
 #endif
@@ -517,12 +434,13 @@ reconnect:
                 goto reconnect;
 	}
 
-#ifndef __WIN32__
 	uint8_t mask[4];
 	mask[0] = rand();
 	mask[1] = rand();
 	mask[2] = rand();
 	mask[3] = rand();
+
+#ifndef __WIN32__
 	fd_set rset;
 	// find the highest fd
 	int max_fd = peer->fd;
@@ -531,12 +449,17 @@ reconnect:
 #else
 	WSAEVENT ev = WSACreateEvent();
 	WSAEventSelect((SOCKET)peer->fd, ev, FD_READ);
-	HANDLE mutex = CreateMutex(NULL, FALSE, NULL);
-	void *thread_args[3];
-	thread_args[0] = tuntap_fd;
-	thread_args[1] = peer;
-	thread_args[2] = mutex;
-	CreateThread(NULL, 0, _vpn_ws_tuntap_reader, thread_args, 0, NULL);
+	OVERLAPPED overlapped_read = {0};
+	overlapped_read.hEvent = CreateEvent(NULL, TRUE, TRUE, NULL);
+	if (!overlapped_read.hEvent) {
+		vpn_ws_error("main()/CreateEvent()");
+		vpn_ws_exit(1);
+	}
+	HANDLE waiting_objects[2];
+	waiting_objects[0] = ev;
+	waiting_objects[1] = overlapped_read.hEvent;
+	// flag to signal if we need to call RadFile on the tuntap device
+	int tuntap_is_reading = 0;
 #endif
 
 	for(;;) {
@@ -564,7 +487,7 @@ reconnect:
 			}			
 		}
 #else
-		DWORD ret = WaitForSingleObject(ev, 17000);
+		DWORD ret = WaitForMultipleObjects(waiting_objects, 2, FALSE, 17000);
 		if (ret == WAIT_FAILED) {
 			vpn_ws_error("main()/WaitForMultipleObjects()");
 			vpn_ws_exit(1);
@@ -598,10 +521,25 @@ reconnect:
                          			ws[i] = ws[i] ^ peer->mask[i % 4];
                 			}
 				}
+#ifndef __WIN32__
 				if (vpn_ws_full_write(tuntap_fd, (char *)ws, ws_len)) {
 					// being not able to write on tuntap is really bad...
 					vpn_ws_exit(1);
 				}
+#else
+				OVERLAPPED overlapped_write = {0};
+				ssize_t wlen = -1;
+				if (!WriteFile(tuntap_fd, ws, ws_len, &wlen, &overlapped_write)) {
+					if (GetLastError() != ERROR_IO_PENDING) {
+						vpn_ws_error("main()/WriteFile()");
+						vpn_ws_exit(1);
+					}
+					if (!GetOverlappedResult(tuntap_fd, &overlapped_write, &wlen, TRUE)) {
+						vpn_ws_error("main()/GetOverlappedResult()");
+                                        	vpn_ws_exit(1);
+					}	
+				}	
+#endif
 				memmove(peer->buf, peer->buf + rlen, peer->pos - rlen);
         			peer->pos -= rlen;
 			}
@@ -619,6 +557,31 @@ reconnect:
 				vpn_ws_error("main()/read()");
                         	vpn_ws_exit(1);
 			}
+#else
+		if (ret == WAIT_OBJECT_0+1) {
+			uint8_t mtu[8+1500];
+			ssize_t rlen = -1;
+			// the tuntap is not reading, call ReadFile
+			if (!tuntap_is_reading) {
+				if (!ReadFile(tuntap_fd, mtu+8, 1500, (LPDWORD) &rlen, &overlapped_read)) {
+					if (GetLastError() != ERROR_IO_PENDING) {
+						vpn_ws_error("main()/ReadFile()");
+						vpn_ws_exit(1);
+					}
+					ResetEvent(overlapped_read.hEvent);
+					tuntap_is_reading = 1;
+					continue;
+				}
+				tuntap_is_reading = 0;
+			}
+			else {
+				if (!GetOverlappedResult(tuntap_fd, &overlapped_read, &rlen, TRUE)) {
+					vpn_ws_error("main()/GetOverlappedResult()");
+					vpn_ws_exit(1);
+				}
+				tuntap_is_reading = 0;
+			}
+#endif
 
 			// mask packet
 			ssize_t i;
@@ -650,7 +613,6 @@ reconnect:
 				}
 			}
 		}
-#endif
 
 	}
 
