@@ -77,7 +77,6 @@ int vpn_ws_client_read(vpn_ws_peer *peer, uint64_t amount) {
         }
 
 	vpn_ws_recv(peer->fd, peer->buf + peer->pos, amount, rlen);
-
         if (rlen < 0) {
 		if (rlen < 0 && (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINPROGRESS)) return 0;
 		vpn_ws_error("vpn_ws_client_read()/read()");
@@ -506,6 +505,8 @@ reconnect:
 				vpn_ws_client_destroy(peer);
                 		goto reconnect;
 			}
+			
+			WSAResetEvent(ev);
 			// start getting websocket packets
 			for(;;) {
 				uint16_t ws_header = 0;
