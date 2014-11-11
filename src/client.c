@@ -527,8 +527,8 @@ reconnect:
 					vpn_ws_exit(1);
 				}
 #else
-			printf("event from socket, writing %d\n", (int)ws_len);
-				OVERLAPPED overlapped_write = {0};
+				OVERLAPPED overlapped_write;
+				memset(&overlapped_write, 0, sizeof(OVERLAPPED));
 				ssize_t wlen = -1;
 				if (!WriteFile(tuntap_fd, ws, ws_len, (LPDWORD) &wlen, &overlapped_write)) {
 					if (GetLastError() != ERROR_IO_PENDING) {
@@ -540,7 +540,11 @@ reconnect:
                                         	vpn_ws_exit(1);
 					}	
 				}	
+				if (wlen != ws_len) {
+				printf("WLEN = %d\n", (int) wlen);
+				}
 #endif
+
 				memmove(peer->buf, peer->buf + rlen, peer->pos - rlen);
         			peer->pos -= rlen;
 			}
@@ -559,7 +563,7 @@ reconnect:
                         	vpn_ws_exit(1);
 			}
 #else
-		if (ret == WAIT_OBJECT_0+1) {
+		if (ret == WAIT_OBJECT_0+1 || WaitForSingleObject(overlapped_read.hEvent, 0) == WAIT_OBJECT_0) {
 			uint8_t mtu[8+1500];
 			ssize_t rlen = -1;
 			// the tuntap is not reading, call ReadFile
@@ -574,11 +578,9 @@ reconnect:
 					continue;
 				}
 				tuntap_is_reading = 0;
-				printf(" NON ASYNC\n");
 				SetEvent(overlapped_read.hEvent);
 			}
 			else {
-				printf("ASYNC !!!\n");
 				if (!GetOverlappedResult(tuntap_fd, &overlapped_read, (LPDWORD)&rlen, TRUE)) {
 					vpn_ws_error("main()/GetOverlappedResult()");
 					vpn_ws_exit(1);
@@ -588,7 +590,6 @@ reconnect:
 			}
 #endif
 
-			printf("event from tuntap %d bytes\n", (int) rlen);
 
 			// mask packet
 			ssize_t i;
