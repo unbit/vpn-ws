@@ -574,13 +574,17 @@ reconnect:
 					continue;
 				}
 				tuntap_is_reading = 0;
+				printf(" NON ASYNC\n");
+				SetEvent(overlapped_read.hEvent);
 			}
 			else {
+				printf("ASYNC !!!\n");
 				if (!GetOverlappedResult(tuntap_fd, &overlapped_read, (LPDWORD)&rlen, TRUE)) {
 					vpn_ws_error("main()/GetOverlappedResult()");
 					vpn_ws_exit(1);
 				}
 				tuntap_is_reading = 0;
+				SetEvent(overlapped_read.hEvent);
 			}
 #endif
 
