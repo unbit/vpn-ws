@@ -1,19 +1,16 @@
 vpn-ws
 ======
 
-*** WORK In PROGRESS, THIS IS ONLY A (WORKING ;) PROTOTYPE ***
-
 A VPN system over websockets
 
-This is the server-side implementation of a layer-2 software switch able to route packets over websockets connections.
+This is the client/server implementation of a layer-2 software switch able to route packets over websockets connections.
 
-The daemon is meant to be run behind nginx, apache, the uWSGI http router or a HTTP/HTTPS proxy able to speak the uwsgi protocol and to manage
-the websocket protocol
+The daemon is meant to be run behind nginx, apache, the uWSGI http router or a HTTP/HTTPS proxy able to speak the uwsgi protocol and to manage websockets connections
 
 How it works
 ============
 
-A client creates a tap (ethernet-like) local device and connects to a websocket server (preferably over HTTPS). Once the handshake is done,
+A client creates a tap (ethernet-like) local device and connects to a websocket server (preferably over HTTPS). Once the websocket handshake is done,
 every packet received from the tuntap will be forwarded to the websocket server, and every websocket packet received from the server will be forwarded
 to the tuntap device.
 
@@ -31,19 +28,28 @@ By default only HTTPS access (eventually with client certificate authentication)
 Installation
 ============
 
+You need gnu make and a c compiler (clang, gcc, and mingw-gcc are supported).
+
+The server has no external dependancies, while the client requires openssl (except for OSX and Windows where their native ssl/tls implementation is used)
+
 Just run
 
 ```sh
 make
 ```
 
-after having cloned the repository. If all goes well you will end with a binary named
+after having cloned the repository. If all goes well you will end with a binary named vpn-ws (the server) and another named vpn-ws-client (the client)
 
+You can eventually build server or client selectively with
 ```sh
-vpn-ws
+make vpn-ws
+make vpn-ws-client
 ```
 
-by default the binary takes a single argument, the name of the socket to bind (the one to which the proxy will connect to)
+Running the server
+==================
+
+by default the server binary takes a single argument, the name of the socket to bind (the one to which the proxy will connect to):
 
 ```sh
 ./vpn-ws /run/vpn.sock
@@ -52,6 +58,89 @@ by default the binary takes a single argument, the name of the socket to bind (t
 will bind to /run/vpn.sock
 
 Now you only need to configure your webserver/proxy to route requests to /run/vpn.sock using the uwsgi protocol (see below)
+
+Nginx
+=====
+
+Nginx will be your "shield", managing the authentication/authorization phase. HTTPS + basicauth is strongly suggested, but best setup would be HTTPS + certificates authentication. You can run with plain HTTP and without auth, but please, do not do it, unless for testing ;)
+
+You need to choose the location for which nginx will forward requests to the vpn-ws server:
+
+(we use /vpn)
+
+```nginx
+location /vpn {
+  include uwsgi_params;
+  uwsgi_pass unix:/run/vpn.sock;
+}
+```
+
+this a setup without authentication, a better one (with basicauth) could be:
+```nginx
+location /vpn {
+  include uwsgi_params;
+  uwsgi_pass unix:/run/vpn.sock;
+  auth_basic "VPN";
+  auth_basic_user_file /etc/nginx/.htpasswd;
+}
+```
+
+where /etc/nginx/.htpasswd will be the file containing credentials (you can use the htpasswd tool to generate them)
+
+The Official Client
+===================
+
+The official client (vpn-ws-client) is a command line tool (written in C). Its syntax is pretty simple:
+
+```sh
+vpn-ws-client <tap> <server>
+```
+
+where <tap> is a (platform-dependent) tap device path, and server is the url of the nginx /vpn path (in the ws://|wss:// form)
+
+Before using the client, you need to ensure you have some form of tun/tap implementation. Linux and FreeBSD already have it out-of the box. 
+
+For OSX you need to install 
+
+http://sourceforge.net/projects/tuntaposx/files/tuntap/20141104
+
+while on Windows (ensure to select utils too, when running the installer)
+
+http://swupdate.openvpn.org/community/releases/tap-windows-9.9.2_3.exe
+
+The client must be run as root/sudo (as it requires to create a network interface [TODO: drop privileges after having created the interface).
+
+On linux (you can name devices as you want):
+
+```sh
+./vpn-ws-client vpn-ws0 wss://foo:bar@example.com/vpn
+```
+
+On OSX (you have a fixed number of /dev/tapN devices you can use)
+
+```sh
+./vpn-ws-client /dev/tap0 wss://foo:bar@example.com/vpn
+```
+
+On FreeBSD (you need to create the interface to access the device):
+
+```sh
+ifconfig tap0 create
+./vpn-ws-client /dev/tap0 wss://foo:bar@example.com/vpn
+```
+
+On windows (you need to create a tap device via the uprovided utility and assign it a name, like 'foobar')
+
+```sh
+./vpn-ws-client foobar wss://foo:bar@example.com/vpn
+```
+
+Once your client is connected you can assign it an ip address (or make a dhp request if one of the connected nodes has a running dhcp server)
+
+The mode we are using now is the simple "switch" one, where node simply communicates between them like in a lan.
+
+Bridge mode
+===========
 
 Example Clients
 ===============
@@ -74,65 +163,12 @@ sudo cpanm AnyEvent::WebSocket::Client
 sudo perl clients/vpn.pl /dev/tap0 ws://your_server/
 ```
 
-for OSX you need to install the osxtuntap package (latest tested is http://sourceforge.net/projects/tuntaposx/files/tuntap/20141104/) then, after the connection to the server you need to assign the ipaddress the the interface
-
-For FreeBSD the procedure is a little bit different as you need to create the tap device before starting the client
-
-```sh
-sudo ifconfig tap0 create
-```
+As the official client you need to ensure a tuntap device implementation is available on the system
 
 then (after having connected to the vpn server) you can assign the ip to it
 
 Remember that we are at layer-2, so if you place a dhcp server on one of those nodes it will work as expected.
 
-
-C Client
-========
-
-This is a work in progress, it will be a high-performance client (and probably the official one).
-
-Its code base is currently part of the test suite.
-
-Quickstart (with nginx)
-=======================
-
-We create a switch-only setup (nodes will be interconnected between them but no access to the server network). Each node will be in the 192.168.173.0/24 subnet
-
-You need nginx-1.4 for proper websockets support
-
-Add the following stanza to a nginx server directive (an authenticated and https one if possibile) and reload it
-
-```nginx
-location /vpn {
-  include uwsgi_params;
-  uwsgi_pass unix:/run/vpn.sock;
-}
-```
-
-now spawn the vpn-ws server on /run/vpn.sock (ensure to have permissions on /run, eventually change the socket path). The vpn-ws server does not need to run as root when in switch-mode as it does not require to create a tuntap device.
-
-```sh
-./vpn-ws /run/vpn.sock
-```
-
-Now your clients can connect to the nginx server (ws://server/vpn or wss://server/vpn)
-
-Quickstart (with apache)
-========================
-
-TODO
-
-Bridge and router modes
-=======================
-
-This modes require the server to run as root as it needs to create (or bind) to a tuntap device.
-
-```sh
-sudo ./vpn-ws --tuntap vpn-ws0 /run/vpn.sock
-```
-
-this will create the vpn-ws0 interface on the server. This interface is connected to the virtual switch, so you can bridge it with another network interface in the machine or give it an address to allow the other nodes to reach it.
 
 Multicast and Broadcast
 =======================
