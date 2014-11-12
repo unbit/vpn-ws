@@ -208,30 +208,35 @@ int vpn_ws_client_write(vpn_ws_peer *peer, uint8_t *buf, uint64_t len) {
 
 
 int vpn_ws_connect(vpn_ws_peer *peer, char *name) {
+	static char *cpy = NULL;
+
+	if (cpy) free(cpy);
+	cpy = strdup(name);
+	
 	int ssl = 0;
 	uint16_t port = 80;
-	if (strlen(name) < 6) {
-		vpn_ws_log("invalid websocket url: %s\n", name);
+	if (strlen(cpy) < 6) {
+		vpn_ws_log("invalid websocket url: %s\n", cpy);
 		return -1;
 	}
 
-	if (!strncmp(name, "wss://", 6)) {
+	if (!strncmp(cpy, "wss://", 6)) {
 		ssl = 1;
 		port = 443;
 	}
-	else if (!strncmp(name, "ws://", 5)) {
+	else if (!strncmp(cpy, "ws://", 5)) {
 		ssl = 0;
 		port = 80;
 	}
 	else {
-		vpn_ws_log("invalid websocket url: %s (requires ws:// or wss://)\n", name);
+		vpn_ws_log("invalid websocket url: %s (requires ws:// or wss://)\n", cpy);
 		return -1;
 	}
 
 	char *path = NULL;
 
 	// now get the domain part
-	char *domain = name + 5 + ssl;
+	char *domain = cpy + 5 + ssl;
 	size_t domain_len = strlen(domain);
 	char *slash = strchr(domain, '/');
 	if (slash) {
@@ -325,8 +330,6 @@ int vpn_ws_connect(vpn_ws_peer *peer, char *name) {
 		mac[4],
 		mac[5]
 	);
-
-	if (port_str) *port_str = ':';
 
 	if (auth) free(auth);
 
@@ -542,6 +545,7 @@ reconnect:
                          			ws[i] = ws[i] ^ peer->mask[i % 4];
                 			}
 				}
+
 #ifndef __WIN32__
 				if (vpn_ws_full_write(tuntap_fd, (char *)ws, ws_len)) {
 					// being not able to write on tuntap is really bad...
