@@ -433,12 +433,12 @@ reconnect:
         if (!peer) {
 		goto reconnect;
         }
+	memcpy(peer->mac, vpn_ws_conf.tuntap_mac, 6);
 
 	if (vpn_ws_connect(peer, vpn_ws_conf.server_addr)) {
 		vpn_ws_client_destroy(peer);
 		goto reconnect;
 	}
-	memcpy(peer->mac, vpn_ws_conf.tuntap_mac, 6);
 
 	// we set the socket in non blocking mode, albeit the code paths are all blocking
 	// it is only a secuity measure to avoid dead-blocking the process (as an example select() on Linux is a bit flacky)
