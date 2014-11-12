@@ -185,12 +185,14 @@ to the server command line
 Status/TODO/Working on
 ======================
 
-Currently only Linux has full-features support
+Linux server has full support
+Linux client does not support SSL
 
-FreeBSD and OSX can be used in switch mode
+OSX server has full support
+OSX client has full support
 
-Currently only UNIX sockets are supported for the server
+FreeBSD server has full support
+FreeBSD client has no ssl support
 
-The tuntap device on the server is still not implemented
-
-There is still no support for windows
+Windows server has no support
+Windows client has no ssl support
