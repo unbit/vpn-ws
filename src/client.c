@@ -76,6 +76,19 @@ int vpn_ws_client_read(vpn_ws_peer *peer, uint64_t amount) {
                 peer->buf = tmp;
         }
 
+	if (vpn_ws_conf.ssl_ctx) {
+		ssize_t rlen = vpn_ws_ssl_read(vpn_ws_conf.ssl_ctx, peer->buf + peer->pos, amount);
+		if (rlen == 0) {
+			vpn_ws_log("disconnected\n");
+			return -1;
+		}	
+		if (rlen > 0) {
+        		peer->pos += rlen;
+			return 0;
+		}
+		return rlen;
+	}
+
 	vpn_ws_recv(peer->fd, peer->buf + peer->pos, amount, rlen);
         if (rlen < 0) {
 		if (rlen < 0 && (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINPROGRESS)) return 0;
@@ -188,6 +201,7 @@ int vpn_ws_full_write(vpn_ws_fd fd, char *buf, size_t len) {
 
 int vpn_ws_client_write(vpn_ws_peer *peer, uint8_t *buf, uint64_t len) {
 	if (vpn_ws_conf.ssl_ctx) {
+		return vpn_ws_ssl_write(vpn_ws_conf.ssl_ctx, buf, len);
 	}
 	return vpn_ws_full_write(peer->fd, (char *)buf, len);
 }
@@ -424,6 +438,8 @@ reconnect:
 	}
 	memcpy(peer->mac, vpn_ws_conf.tuntap_mac, 6);
 
+	// we set the socket in non blocking mode, albeit the code paths are all blocking
+	// it is only a secuity measure to avoid dead-blocking the process (as an example select() on Linux is a bit flacky)
 	if (vpn_ws_nb(peer->fd)) {
 		vpn_ws_client_destroy(peer);
                 goto reconnect;
@@ -477,6 +493,7 @@ reconnect:
 		}
 
 		// too much inactivity, send a ping
+		// TODO use it in windows too
 		if (ret == 0) {
 			printf("sending PING\n");
 			if (vpn_ws_client_write(peer, (uint8_t *) "\x89\x00", 2)) {

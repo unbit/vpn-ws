@@ -138,6 +138,7 @@ ssize_t vpn_ws_ssl_read(void *ctx, uint8_t *buf, uint64_t len) {
 	size_t processed = -1;
         OSStatus err = SSLRead((SSLContextRef) ctx, buf, len, &processed);
         if (err == noErr) return processed;
+	if (err == errSSLClosedGraceful) return 0;
         return -1;
 }
 
