@@ -233,7 +233,8 @@ parsed:
 	// if the MAC has been already collected, compare it
 
 	if (peer->mac_collected) {
-		if (memcmp(peer->mac, mac+6, 6)) goto decapitate;
+		// we only trust the tap device
+		if (!peer->raw && memcmp(peer->mac, mac+6, 6)) goto decapitate;
 	}
 	else {
 		memcpy(peer->mac, mac+6, 6);
