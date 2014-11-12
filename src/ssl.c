@@ -143,13 +143,15 @@ ssize_t vpn_ws_ssl_read(void *ctx, uint8_t *buf, uint64_t len) {
 }
 
 void vpn_ws_ssl_close(void *ctx) {
+	SSLClose((SSLContextRef)ctx);
+	CFRelease(ctx);
 }
 
 #else
 
 // use openssl
 
-void *vpn_ws_ssl_handshake(vpn_ws_fd fd, char *sni, char *key, char *crt) {
+void *vpn_ws_ssl_handshake(vpn_ws_peer *peer, char *sni, char *key, char *crt) {
         return NULL;
 }
 
@@ -157,7 +159,7 @@ int vpn_ws_ssl_write(void *ctx, uint8_t *buf, uint64_t len) {
         return -1;
 }
 
-int vpn_ws_ssl_read(void *ctx, uint8_t *buf, uint64_t len) {
+ssize_t vpn_ws_ssl_read(void *ctx, uint8_t *buf, uint64_t len) {
         return -1;
 }
 
