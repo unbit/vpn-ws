@@ -6,7 +6,7 @@ ifeq ($(OS), Windows_NT)
 else
 	OS=$(shell uname)
 	ifeq ($(OS), Darwin)
-		LIBS=-framework Security
+		LIBS=-framework Security -framework CoreFoundation
 	endif
 endif
 

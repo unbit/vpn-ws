@@ -144,6 +144,14 @@ int vpn_ws_wait_101(vpn_ws_fd fd, void *ssl) {
 			}
 			remains -= rlen;
 		}
+		else {
+			ssize_t rlen = vpn_ws_ssl_read(ssl, (uint8_t *) buf + (8192-remains), remains);
+			if (rlen <= 0) {
+				vpn_ws_error("vpn_ws_wait_101()/vpn_ws_ssl_read()");
+                                return -1;
+			}
+			remains -= rlen;
+		}
 
 		int code = vpn_ws_rnrn(buf, 8192-remains);
 		if (code) return code;
@@ -185,12 +193,12 @@ int vpn_ws_client_write(vpn_ws_peer *peer, uint8_t *buf, uint64_t len) {
 }
 
 
-vpn_ws_fd vpn_ws_connect(char *name) {
+int vpn_ws_connect(vpn_ws_peer *peer, char *name) {
 	int ssl = 0;
 	uint16_t port = 80;
 	if (strlen(name) < 6) {
 		vpn_ws_log("invalid websocket url: %s\n", name);
-		return vpn_ws_invalid_fd;
+		return -1;
 	}
 
 	if (!strncmp(name, "wss://", 6)) {
@@ -203,7 +211,7 @@ vpn_ws_fd vpn_ws_connect(char *name) {
 	}
 	else {
 		vpn_ws_log("invalid websocket url: %s (requires ws:// or wss://)\n", name);
-		return vpn_ws_invalid_fd;
+		return -1;
 	}
 
 	char *path = NULL;
@@ -240,17 +248,17 @@ vpn_ws_fd vpn_ws_connect(char *name) {
 	struct hostent *he = gethostbyname(domain);
 	if (!he) {
 		vpn_ws_log("vpn_ws_connect()/gethostbyname(): unable to resolve name\n");
-		return vpn_ws_invalid_fd;
+		return -1;
 	}
 
 #ifndef __WIN32__
-	vpn_ws_fd fd = socket(AF_INET, SOCK_STREAM, 0);
+	peer->fd = socket(AF_INET, SOCK_STREAM, 0);
 #else
-	vpn_ws_fd fd = _vpn_ws_win32_socket(AF_INET, SOCK_STREAM, 0);
+	peer->fd = _vpn_ws_win32_socket(AF_INET, SOCK_STREAM, 0);
 #endif
-	if (vpn_ws_is_invalid_fd(fd)) {
+	if (vpn_ws_is_invalid_fd(peer->fd)) {
 		vpn_ws_error("vpn_ws_connect()/socket()");
-		return vpn_ws_invalid_fd;
+		return -1;
 	}
 
 	struct sockaddr_in sin;
@@ -260,13 +268,12 @@ vpn_ws_fd vpn_ws_connect(char *name) {
 	sin.sin_addr = *((struct in_addr *) he->h_addr);
 
 #ifndef __WIN32__
-	if (connect(fd, (struct sockaddr *) &sin, sizeof(struct sockaddr_in))) {
+	if (connect(peer->fd, (struct sockaddr *) &sin, sizeof(struct sockaddr_in))) {
 #else
-	if (connect((SOCKET) fd, (struct sockaddr *) &sin, sizeof(struct sockaddr_in))) {
+	if (connect((SOCKET) peer->fd, (struct sockaddr *) &sin, sizeof(struct sockaddr_in))) {
 #endif
 		vpn_ws_error("vpn_ws_connect()/connect()");
-		close(fd);
-		return vpn_ws_invalid_fd;
+		return -1;
 	}
 
 	char *auth = NULL;
@@ -274,8 +281,7 @@ vpn_ws_fd vpn_ws_connect(char *name) {
 	if (at) {
 		auth = vpn_ws_calloc(23 + (strlen(at+1) * 2));
 		if (!auth) {
-			close(fd);
-			return vpn_ws_invalid_fd;
+			return -1;
 		}
 		memcpy(auth, "Authorization: Basic ", 21);
 		uint16_t auth_len = vpn_ws_base64_encode((uint8_t *)at+1, strlen(at+2), (uint8_t *)auth + 21);
@@ -310,42 +316,33 @@ vpn_ws_fd vpn_ws_connect(char *name) {
 
 	if (ret == 0 || ret > 8192) {
 		vpn_ws_log("vpn_ws_connect()/snprintf()");
-		close(fd);
-		return vpn_ws_invalid_fd;
+		return -1;
 	}
 
-	void *ctx = NULL;
-
 	if (ssl) {
-		ctx = vpn_ws_ssl_handshake(fd, domain, NULL, NULL);
-		if (!ctx) {
-			close(fd);
-			return vpn_ws_invalid_fd;
+		vpn_ws_conf.ssl_ctx = vpn_ws_ssl_handshake(peer, domain, NULL, NULL);
+		if (!vpn_ws_conf.ssl_ctx) {
+			return -1;
 		}
-		if (vpn_ws_ssl_write(ctx, (uint8_t *)buf, ret)) {
-			vpn_ws_ssl_close(ctx);
-			close(fd);
-			return vpn_ws_invalid_fd;
+		if (vpn_ws_ssl_write(vpn_ws_conf.ssl_ctx, (uint8_t *)buf, ret)) {
+			return -1;
 		}
 	}
 	else {
 		printf("%.*s\n", ret, buf);
-		if (vpn_ws_full_write(fd, buf, ret)) {
-			close(fd);
-			return vpn_ws_invalid_fd;
+		if (vpn_ws_full_write(peer->fd, buf, ret)) {
+			return -1;
 		}		
 	}
 
-	int http_code = vpn_ws_wait_101(fd, ctx);
+	int http_code = vpn_ws_wait_101(peer->fd, vpn_ws_conf.ssl_ctx);
 	if (http_code != 101) {
 		vpn_ws_log("error, websocket handshake returned code: %d\n", http_code);
-		if (ctx) vpn_ws_ssl_close(ctx);
-		close(fd);
-		return vpn_ws_invalid_fd;
+		return -1;
 	}
 
 	vpn_ws_log("connected to %s port %u (transport: %s)\n", domain, port, ssl ? "wss": "ws");
-	return fd;
+	return 0;
 }
 
 int main(int argc, char *argv[]) {
@@ -421,8 +418,7 @@ reconnect:
 		goto reconnect;
         }
 
-	peer->fd = vpn_ws_connect(vpn_ws_conf.server_addr);
-	if (peer->fd < 0) {
+	if (vpn_ws_connect(peer, vpn_ws_conf.server_addr)) {
 		vpn_ws_client_destroy(peer);
 		goto reconnect;
 	}

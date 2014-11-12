@@ -159,9 +159,9 @@ void vpn_ws_peer_create(int, vpn_ws_fd, uint8_t *);
 
 void vpn_ws_log(char *, ...);
 
-void *vpn_ws_ssl_handshake(vpn_ws_fd, char *, char *, char *);
+void *vpn_ws_ssl_handshake(vpn_ws_peer *, char *, char *, char *);
 int vpn_ws_ssl_write(void *, uint8_t *, uint64_t);
-int vpn_ws_ssl_read(void *, uint8_t *, uint64_t);
+ssize_t vpn_ws_ssl_read(void *, uint8_t *, uint64_t);
 void vpn_ws_ssl_close(void *);
 
 int vpn_ws_exec(char *);
