@@ -326,6 +326,8 @@ int vpn_ws_connect(vpn_ws_peer *peer, char *name) {
 		mac[5]
 	);
 
+	if (port_str) *port_str = ':';
+
 	if (auth) free(auth);
 
 	if (ret == 0 || ret > 8192) {
