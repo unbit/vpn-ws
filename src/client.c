@@ -506,7 +506,9 @@ reconnect:
                 		goto reconnect;
 			}
 			
+#ifdef __WIN32__
 			WSAResetEvent(ev);
+#endif
 			// start getting websocket packets
 			for(;;) {
 				uint16_t ws_header = 0;

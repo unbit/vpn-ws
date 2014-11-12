@@ -3,6 +3,11 @@ OBJECTS=src/main.o $(SHARED_OBJECTS) src/socket.o src/event.o src/io.o src/uwsgi
 
 ifeq ($(OS), Windows_NT)
 	LIBS=-lws2_32
+else
+	OS=$(shell uname)
+	ifeq ($(OS), Darwin)
+		LIBS=-framework Security
+	endif
 endif
 
 all: vpn-ws vpn-ws-client
@@ -11,7 +16,7 @@ src/%.o: src/%.c src/vpn-ws.h
 	$(CC) $(CFLAGS) -Wall -Werror -g -c -o $@ $<
 
 vpn-ws: $(OBJECTS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -Wall -Werror -g -o vpn-ws $(OBJECTS) $(LIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -Wall -Werror -g -o vpn-ws $(OBJECTS)
 
 vpn-ws-client: src/client.o src/ssl.o $(SHARED_OBJECTS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -Wall -Werror -g -o vpn-ws-client src/client.o src/ssl.o $(SHARED_OBJECTS) $(LIBS)
