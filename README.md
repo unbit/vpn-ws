@@ -96,7 +96,7 @@ The official client (vpn-ws-client) is a command line tool (written in C). Its s
 vpn-ws-client <tap> <server>
 ```
 
-where <tap> is a (platform-dependent) tap device path, and server is the url of the nginx /vpn path (in the ws://|wss:// form)
+where 'tap' is a (platform-dependent) tap device path, and 'server' is the url of the nginx /vpn path (in the ws://|wss:// form)
 
 Before using the client, you need to ensure you have some form of tun/tap implementation. Linux and FreeBSD already have it out-of the box. 
 
