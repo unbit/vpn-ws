@@ -1,15 +1,17 @@
 #include "vpn-ws.h"
 
 static struct option vpn_ws_options[] = {
-	{"tuntap", required_argument, 0, 1 },
-	{"exec", required_argument, 0, 2 },
+	{"tuntap", required_argument, NULL, 1 },
+	{"exec", required_argument, NULL, 2 },
+	{"bridge", required_argument, &vpn_ws_conf.bridge, 1 },
+	{"no-broadcast", required_argument, &vpn_ws_conf.no_broadcast, 1 },
+	{"no-multicast", required_argument, &vpn_ws_conf.no_multicast, 1 },
 	{NULL, 0, 0, 0}
 };
 
 int main(int argc, char *argv[]) {
 	int option_index = 0;
 	int event_queue = -1;
-	char *tuntap_name = NULL;
 
 	vpn_ws_fd server_fd;
 	vpn_ws_fd tuntap_fd;
@@ -29,7 +31,7 @@ int main(int argc, char *argv[]) {
 		switch(c) {
 			// tuntap
 			case 1:
-				tuntap_name = optarg;
+				vpn_ws_conf.tuntap_name = optarg;
 				break;
 			// exec
 			case 2:
@@ -66,8 +68,8 @@ int main(int argc, char *argv[]) {
 		vpn_ws_exit(1);
 	}
 
-	if (tuntap_name) {
-		tuntap_fd = vpn_ws_tuntap(tuntap_name);
+	if (vpn_ws_conf.tuntap_name) {
+		tuntap_fd = vpn_ws_tuntap(vpn_ws_conf.tuntap_name);
 		if (tuntap_fd < 0) {
 			vpn_ws_exit(1);
 		}

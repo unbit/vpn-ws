@@ -234,7 +234,7 @@ parsed:
 
 	if (peer->mac_collected) {
 		// we only trust the tap device
-		if (!peer->raw && memcmp(peer->mac, mac+6, 6)) goto decapitate;
+		//if (!peer->raw && memcmp(peer->mac, mac+6, 6)) goto decapitate;
 	}
 	else {
 		memcpy(peer->mac, mac+6, 6);
@@ -296,7 +296,15 @@ parsed:
 	// append packet to the peer write buffer
 	// attempt to call write
 	vpn_ws_peer *b_peer = vpn_ws_peer_by_mac(mac);
-	if (!b_peer) goto decapitate;
+	if (!b_peer) {
+		if (vpn_ws_conf.tuntap_name && vpn_ws_conf.bridge) {
+			b_peer = vpn_ws_peer_by_mac(vpn_ws_conf.tuntap_mac);
+			if (!b_peer) goto decapitate;
+		}
+		else {
+			goto decapitate;
+		}
+	}
 
 	int wret = -1;
 	if (b_peer->raw && !peer->raw) {

@@ -396,7 +396,7 @@ int main(int argc, char *argv[]) {
 		vpn_ws_exit(1);
 	}
 
-	vpn_ws_conf.tuntap = argv[optind];
+	vpn_ws_conf.tuntap_name = argv[optind];
 	vpn_ws_conf.server_addr = argv[optind+1];
 
 	// initialize rnd engine
@@ -405,7 +405,7 @@ int main(int argc, char *argv[]) {
 	srand((unsigned int) (tv.tv_usec * tv.tv_sec));
 
 
-	vpn_ws_fd tuntap_fd = vpn_ws_tuntap(vpn_ws_conf.tuntap);
+	vpn_ws_fd tuntap_fd = vpn_ws_tuntap(vpn_ws_conf.tuntap_name);
 	if (vpn_ws_is_invalid_fd(tuntap_fd)) {
 		vpn_ws_exit(1);
 	}

@@ -85,12 +85,13 @@ typedef struct vpn_ws_peer vpn_ws_peer;
 
 struct vpn_ws_config {
 	char *server_addr;	
-	char *tuntap;
+	char *tuntap_name;
 
 	char *exec;
 
 	int no_multicast;
 	int no_broadcast;
+	int bridge;
 
 	uint8_t tuntap_mac[6];
 
