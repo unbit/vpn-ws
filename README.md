@@ -129,15 +129,15 @@ ifconfig tap0 create
 ./vpn-ws-client /dev/tap0 wss://foo:bar@example.com/vpn
 ```
 
-On windows (you need to create a tap device via the uprovided utility and assign it a name, like 'foobar')
+On windows (you need to create a tap device via the provided utility and assign it a name, like 'foobar')
 
 ```sh
 ./vpn-ws-client foobar wss://foo:bar@example.com/vpn
 ```
 
-Once your client is connected you can assign it an ip address (or make a dhp request if one of the connected nodes has a running dhcp server)
+Once your client is connected you can assign it an ip address (or make a dhcp request if one of the connected nodes has a running dhcp server)
 
-The mode we are using now is the simple "switch" one, where node simply communicates between them like in a lan.
+The mode we are using now is the simple "switch" one, where nodes simply communicates between them like in a lan.
 
 Bridge mode
 ===========
@@ -186,13 +186,17 @@ Status/TODO/Working on
 ======================
 
 Linux server has full support
+
 Linux client does not support SSL
 
 OSX server has full support
+
 OSX client has full support
 
 FreeBSD server has full support
+
 FreeBSD client has no ssl support
 
 Windows server has no support
+
 Windows client has no ssl support
