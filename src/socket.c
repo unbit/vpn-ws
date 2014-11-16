@@ -1,19 +1,60 @@
 #include "vpn-ws.h"
 
 vpn_ws_fd vpn_ws_bind_ipv6(char *name) {
-#ifndef __WIN32__
-	return -1;
-#else
-	return NULL;
-#endif
+	struct sockaddr_in6 sin6;
+	memset(&sin6, 0, sizeof(struct sockaddr_in6));
+	vpn_ws_fd fd = socket(AF_INET6, SOCK_STREAM, 0);
+	return fd;
 }
 
 vpn_ws_fd vpn_ws_bind_ipv4(char *name) {
-#ifndef __WIN32__
-	return -1;
-#else
-	return NULL;
-#endif
+	struct sockaddr_in sin4;
+	memset(&sin4, 0, sizeof(struct sockaddr_in));
+
+	char *port = strchr(name, ':');
+	if (!port) {
+		vpn_ws_error("invalid ipv4 address, must be in the form address:port\n");
+		return -1;
+	}
+	*port = 0;
+
+	sin4.sin_family = AF_INET;
+	sin4.sin_port = htons(atoi(port + 1));
+	if (name[0] == 0) {
+		sin4.sin_addr.s_addr = INADDR_ANY;
+	}
+	else {
+		sin4.sin_addr.s_addr = inet_addr(name);
+	}
+
+	*port = ':';
+
+	vpn_ws_fd fd = socket(AF_INET, SOCK_STREAM, 0);
+	if (fd < 0) {
+		vpn_ws_error("vpn_ws_bind_ipv4()/socket()");
+		return -1;
+	}
+
+	int reuse = 1;
+	if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (const void *) &reuse, sizeof(int)) < 0) {
+		vpn_ws_error("vpn_ws_bind_ipv4()/setsockopt()");
+		close(fd);
+                return -1;
+	}
+
+	if (bind(fd, (struct sockaddr *) &sin4, sizeof(struct sockaddr_in))) {
+		vpn_ws_error("vpn_ws_bind_ipv4()/bind()");
+                close(fd);
+                return -1;
+	}
+
+	if (listen(fd, 100)) {
+		vpn_ws_error("vpn_ws_bind_ipv4()/listen()");
+                close(fd);
+                return -1;
+	}
+	
+	return fd;
 }
 
 vpn_ws_fd vpn_ws_bind_unix(char *name) {
