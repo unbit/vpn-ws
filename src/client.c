@@ -82,7 +82,6 @@ int vpn_ws_client_read(vpn_ws_peer *peer, uint64_t amount) {
 	if (vpn_ws_conf.ssl_ctx) {
 		ssize_t rlen = vpn_ws_ssl_read(vpn_ws_conf.ssl_ctx, peer->buf + peer->pos, amount);
 		if (rlen == 0) {
-			vpn_ws_log("disconnected\n");
 			return -1;
 		}	
 		if (rlen > 0) {
@@ -99,7 +98,6 @@ int vpn_ws_client_read(vpn_ws_peer *peer, uint64_t amount) {
 		return -1;
 	}
 	else if (rlen == 0) {
-		vpn_ws_log("disconnected\n");
 		return -1;
 	}
         peer->pos += rlen;
@@ -435,6 +433,9 @@ int main(int argc, char *argv[]) {
 	int throttle = -1;
 	// back here whenever the server disconnect
 reconnect:
+	if (throttle > -1) {
+		vpn_ws_log("disconnected\n");
+	}
 	if (throttle >= 30) throttle = 0;
 	throttle++;
 	if (throttle) sleep(throttle);

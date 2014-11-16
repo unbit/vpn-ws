@@ -18,10 +18,11 @@ int vpn_ws_nb(vpn_ws_fd fd) {
 
 void vpn_ws_announce_peer(vpn_ws_peer *peer, char *msg) {
 	if (peer->raw) return;
+	if (!peer->handshake) return;
 #ifndef __WIN32__
-	vpn_ws_log("%s peer %d MAC=%02X:%02X:%02X:%02X:%02X:%02X REMOTE_ADDR=%s DN=%s\n"
+	vpn_ws_log("%s peer %d MAC=%02X:%02X:%02X:%02X:%02X:%02X REMOTE_ADDR=%s REMOTE_USER=%s DN=%s\n"
 #else
-	vpn_ws_log("%s peer %p MAC=%02X:%02X:%02X:%02X:%02X:%02X REMOTE_ADDR=%s DN=%s\n"
+	vpn_ws_log("%s peer %p MAC=%02X:%02X:%02X:%02X:%02X:%02X REMOTE_ADDR=%s REMOTE_USER=%s DN=%s\n"
 #endif
 			,msg,
 			peer->fd,
@@ -32,6 +33,7 @@ void vpn_ws_announce_peer(vpn_ws_peer *peer, char *msg) {
                         peer->mac[4],
                         peer->mac[5],
 			peer->remote_addr ? peer->remote_addr : "",
+			peer->remote_user ? peer->remote_user : "",
 			peer->dn ? peer->dn : "");
 }
 
