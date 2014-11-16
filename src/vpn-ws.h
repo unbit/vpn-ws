@@ -180,3 +180,5 @@ int vpn_ws_exec(char *);
 void vpn_ws_announce_peer(vpn_ws_peer *, char *);
 
 int64_t vpn_ws_ctrl_json(int, vpn_ws_peer *);
+
+int vpn_ws_str_to_uint(char *, uint64_t);

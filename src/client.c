@@ -140,10 +140,7 @@ int vpn_ws_rnrn(char *buf, size_t len) {
                 status = 0;
 	}
 	if (status != 4) return 0;
-	int code = 100 * (buf[9] - 48);
-        code += 10 * (buf[10] - 48);
-        code += buf[11] - 48;
-	return code;
+	return vpn_ws_str_to_uint(buf+9, 3);
 }
 
 // here the socket is still in blocking state

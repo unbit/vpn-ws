@@ -34,3 +34,11 @@ void vpn_ws_announce_peer(vpn_ws_peer *peer, char *msg) {
 			peer->remote_addr ? peer->remote_addr : "",
 			peer->dn ? peer->dn : "");
 }
+
+int vpn_ws_str_to_uint(char *buf, uint64_t len) {
+	int n = 0;
+	while(len--) {
+		n = n*10 + *buf++ - '0';
+	}
+	return n;
+}

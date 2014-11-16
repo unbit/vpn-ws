@@ -223,15 +223,90 @@ static int json_append_json(char *json, uint64_t *pos, uint64_t *len, char *buf,
 	return 0;
 }
 
+/*
+	QUERY_STRING functions
+*/
+static char *qs_check(char *qs, uint16_t qs_len, char *key, uint16_t key_len, uint16_t *v_len) {
+	// search for the equal sign
+        char *equal = memchr(qs, '=', qs_len);
+	if (!equal) return NULL;
+	if (key_len != equal-qs) return NULL;
+	if (memcmp(qs, key, key_len)) return NULL;
+	*v_len = qs_len - ((equal-qs)+1);
+	if (!*v_len) return NULL;
+	return equal+1;
+}
+
+static char *qs_get(char *qs, uint16_t qs_len, char *key, uint16_t key_len, uint16_t *v_len) {
+	uint16_t i;
+	char *found = qs;
+	uint16_t found_len = 0;
+	char *ptr = qs;
+	for(i=0;i<qs_len;i++) {
+		if (!found) {
+			found = ptr + i;
+		}
+		if (ptr[i] == '&') {
+			char *value = qs_check(found, found_len, key, key_len, v_len);
+			if (value) return value;
+			found_len = 0;
+			found = NULL;
+			continue;
+		}
+		found_len++;
+	}
+
+	if (found_len > 0) {
+		char *value = qs_check(found, found_len, key, key_len, v_len);
+		if (value) return value;
+	}
+	return NULL;
+}
+
+/*
+
+	JSON control interface
+
+*/
+
 #define HTTP_RESPONSE_JSON "HTTP/1.0 200 OK\r\nConnection: close\r\nCache-Control: no-cache, no-store, must-revalidate\r\nPragma: no-cache\r\nExpires: 0\r\nContent-Type: application/json\r\n\r\n"
 int64_t vpn_ws_ctrl_json(int queue, vpn_ws_peer *peer) {
+	int ret;
 	uint64_t json_pos = 0;
 	uint64_t json_len = 8192;
 	char *json = vpn_ws_malloc(json_len);
 	if (!json) return -1;
 	if (json_append(json, &json_pos, &json_len, HTTP_RESPONSE_JSON, sizeof(HTTP_RESPONSE_JSON)-1)) goto end;
 
-	if (json_append(json, &json_pos, &json_len, "{\"peers\":[", 10)) goto end;
+	uint16_t query_string_len = 0;
+	char *query_string = vpn_ws_peer_get_var(peer, "QUERY_STRING", 12, &query_string_len);
+	if (query_string) {
+		uint16_t kill_peer_len = 0;
+		char *kill_peer = qs_get(query_string, query_string_len, "kill", 4, &kill_peer_len);
+		if (kill_peer) {
+			int fd = vpn_ws_str_to_uint(kill_peer, kill_peer_len);
+			if (fd < 0 || fd > vpn_ws_conf.peers_n) {
+				json[9] = '4';
+				json[10] = '0';
+				json[11] = '4';
+				if (json_append(json, &json_pos, &json_len, "{\"status\":\"not found\"}", 22)) goto end;	
+				goto commit;
+			}
+			vpn_ws_peer *b_peer = vpn_ws_conf.peers[fd];
+			if (!b_peer || b_peer->raw) {
+				json[9] = '4';
+				json[10] = '0';
+				json[11] = '4';
+				if (json_append(json, &json_pos, &json_len, "{\"status\":\"not found\"}", 22)) goto end;	
+				goto commit;
+			}
+			vpn_ws_peer_destroy(b_peer);
+			if (json_append(json, &json_pos, &json_len, "{\"status\":\"ok\"}", 15)) goto end;
+                        goto commit;
+		}
+	}
+
+	if (json_append(json, &json_pos, &json_len, "{\"status\":\"ok\",\"peers\":[", 24)) goto end;
 
 	uint64_t i;
 	uint8_t found = 0;
@@ -240,7 +315,6 @@ int64_t vpn_ws_ctrl_json(int queue, vpn_ws_peer *peer) {
 
                 if (!b_peer) continue;
 		if (b_peer->raw) continue;
-                if (!b_peer->mac_collected) continue;
 
 		found = 1;
 
@@ -276,8 +350,10 @@ int64_t vpn_ws_ctrl_json(int queue, vpn_ws_peer *peer) {
 		json_pos--;
 
 	if (json_append(json, &json_pos, &json_len, "]}", 2)) goto end;
+
+commit:
 	// send the response
-        int ret = vpn_ws_write(peer, (uint8_t *)json, json_pos);
+        ret = vpn_ws_write(peer, (uint8_t *)json, json_pos);
         if (ret < 0) return -1;
         // again ?
         if (ret == 0) {
