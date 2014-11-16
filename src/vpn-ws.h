@@ -80,6 +80,9 @@ struct vpn_ws_peer {
 	uint64_t tx;
 
 	uint8_t raw;
+
+	char *remote_addr;
+	char *dn;
 };
 typedef struct vpn_ws_peer vpn_ws_peer;
 

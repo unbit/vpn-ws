@@ -80,6 +80,25 @@ int64_t vpn_ws_handshake(int queue, vpn_ws_peer *peer) {
 	char *ws_key = vpn_ws_peer_get_var(peer, "HTTP_SEC_WEBSOCKET_KEY", 22, &ws_key_len);
 	if (!ws_key) return -1;
 
+	uint16_t remote_addr_len = 0;
+	char *remote_addr = vpn_ws_peer_get_var(peer, "REMOTE_ADDR", 11, &remote_addr_len);
+	if (remote_addr) {
+		peer->remote_addr = strndup(remote_addr, remote_addr_len);
+	} 
+
+	uint16_t https_dn_len = 0;
+	char *https_dn = vpn_ws_peer_get_var(peer, "HTTPS_DN", 8, &https_dn_len);
+	if (https_dn) {
+		peer->dn = strndup(https_dn, https_dn_len);
+	}
+	else {
+		https_dn = vpn_ws_peer_get_var(peer, "DN", 2, &https_dn_len);
+		if (https_dn) {
+			peer->dn = strndup(https_dn, https_dn_len);
+		}
+	}
+
+
 	// check if the X-vpn-ws-MAC header is available
 	uint16_t ws_mac_len = 0;
 	char *ws_mac = vpn_ws_peer_get_var(peer, "HTTP_X_VPN_WS_MAC", 17, &ws_mac_len);
@@ -94,6 +113,7 @@ int64_t vpn_ws_handshake(int queue, vpn_ws_peer *peer) {
 		peer->mac_collected = 1;
 		vpn_ws_announce_peer(peer, "registered new");
 	}
+
 
 	// build the response to complete the handshake
 	// use a static malloc'ed are to prebuild the response and changing only

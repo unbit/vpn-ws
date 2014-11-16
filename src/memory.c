@@ -11,7 +11,8 @@ void vpn_ws_peer_destroy(vpn_ws_peer *peer) {
 		vpn_ws_announce_peer(peer, "removing");
 		close(fd);
 	}
-
+	if (peer->remote_addr) free(peer->remote_addr);
+	if (peer->dn) free(peer->dn);
 	if (peer->buf) free(peer->buf);
 	free(peer);
 
