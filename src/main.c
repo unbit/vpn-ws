@@ -6,6 +6,9 @@ static struct option vpn_ws_options[] = {
 	{"bridge", no_argument, &vpn_ws_conf.bridge, 1 },
 	{"no-broadcast", no_argument, &vpn_ws_conf.no_broadcast, 1 },
 	{"no-multicast", no_argument, &vpn_ws_conf.no_multicast, 1 },
+	{"uid", required_argument, NULL, 3 },
+	{"gid", required_argument, NULL, 4 },
+	{"help", no_argument, NULL, '?' },
 	{NULL, 0, 0, 0}
 };
 
@@ -40,7 +43,16 @@ int main(int argc, char *argv[]) {
 				vpn_ws_conf.exec = optarg;
 				break;
 			case '?':
-				break;
+				fprintf(stdout, "usage: %s [options] <address>\n", argv[0]);
+				fprintf(stdout, "\t--tuntap <device>\tcreate the specified tuntap device and attach to the engine\n");
+				fprintf(stdout, "\t--exec <cmd>\t\texecute the specified command soon after the tuntap device is created\n");
+				fprintf(stdout, "\t--bridge\t\tenable bridge mode\n");
+				fprintf(stdout, "\t--no-broadcast\t\tdisable broadcast management\n");
+				fprintf(stdout, "\t--no-multicast\t\tdisable multicast management\n");
+				fprintf(stdout, "\t--uid <user or uid>\tdrop privileges to the specified user/uid\n");
+				fprintf(stdout, "\t--gid <group or gid>\tdrop privileges to the specified group/did\n");
+				fprintf(stdout, "\t--help\t\t\tthis help\n");
+				exit(0);
 			default:
 				vpn_ws_log("error parsing arguments\n");
 				vpn_ws_exit(1);

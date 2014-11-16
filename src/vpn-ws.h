@@ -97,6 +97,9 @@ struct vpn_ws_config {
 	char *server_addr;	
 	char *tuntap_name;
 
+	char *uid;
+	char *gid;
+
 	char *exec;
 
 	char *ssl_key;
