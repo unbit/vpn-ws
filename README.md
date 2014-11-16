@@ -139,8 +139,60 @@ Once your client is connected you can assign it an ip address (or make a dhcp re
 
 The mode we are using now is the simple "switch" one, where nodes simply communicates between them like in a lan.
 
-Bridge mode
-===========
+Server tap and Bridge mode
+==========================
+
+By default the server acts a simple switch, routing packets to connected peers based on the advertised mac address.
+
+In addition to this mode you can give the vpn-ws server a virtual device too (with its mac address) to build complex setup.
+
+To add a device to the vpn-ws server:
+
+```sh
+./vpn-ws --tuntap vpn0 /run/vpn.sock
+```
+
+the argument of tuntap is platform dependent (the same rules of clients apply).
+
+The 'vpn0' interface is considered like connected nodes, so once you give it an ip address it will join the switch.
+
+One of the use case you may want to follow is briding the vpn with your physical network (in the server). For building it you need the server to forward packets without a matching connected peers to the tuntap device. This is the bridge mode. To enable it add --bridge to the server command line:
+
+```sh
+./vpn-ws --bridge --tuntap vpn0 /run/vpn.sock
+```
+
+Now you can add 'vpn0' to a pre-existing network bridge:
+
+```sh
+# linux example
+brctl addbr br0
+brctl addif br0 eth0
+brctl addif br0 vpn0
+```
+The --exec trick
+================
+
+Both the server and client take an optional argument named '--exec <cmd>'. This option will instruct the server/client to execute a command soon after the tuntap device is created.
+
+As an example you may want to call ifconfig upon connection:
+
+```sh
+vpn-ws-client --exec "ifconfig vpn17 192.168.173.17 netmask 255.255.255.0" vpn17 wss://example.com/
+```
+
+or to add your server to a tuntap to an already existent bridge:
+
+```sh
+vpn-ws --exec "brctl addif br0 vpn0" --bridge --tuntap vpn0 /run/vpn.sock
+```
+
+You can chain multiple commands with ;
+
+```sh
+vpn-ws --exec "brctl addif br0 vpn0; ifconfig br0 192.168.173.30" --bridge --tuntap vpn0 /run/vpn.sock
+```
+
 
 Example Clients
 ===============
