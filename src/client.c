@@ -517,7 +517,6 @@ reconnect:
 #endif
 
 		// too much inactivity, send a ping
-			printf("sending PING\n");
 			if (vpn_ws_client_write(peer, (uint8_t *) "\x89\x00", 2)) {
 				vpn_ws_client_destroy(peer);
                 		goto reconnect;
