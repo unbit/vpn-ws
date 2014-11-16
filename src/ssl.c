@@ -194,6 +194,24 @@ void *vpn_ws_ssl_handshake(vpn_ws_peer *peer, char *sni, char *key, char *crt) {
 			SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_PEER, NULL);
 		}
 		ssl_peer_index = SSL_CTX_get_ex_new_index(0, NULL, NULL, NULL, NULL);
+
+		if (key) {
+			if (SSL_CTX_use_PrivateKey_file(ssl_ctx, key, SSL_FILETYPE_PEM) <= 0) {
+				vpn_ws_log("vpn_ws_ssl_handshake(): unable to load key %s\n", key);
+				SSL_CTX_free(ssl_ctx);
+				ssl_ctx = NULL;	
+				return NULL;
+			}
+		}
+
+		if (crt) {
+			if (SSL_CTX_use_certificate_chain_file(ssl_ctx, crt) <= 0) {
+				vpn_ws_log("vpn_ws_ssl_handshake(): unable to load certificate %s\n", crt);
+				SSL_CTX_free(ssl_ctx);
+				ssl_ctx = NULL;	
+				return NULL;
+			}
+		}
 	}
 
 

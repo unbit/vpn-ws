@@ -7,6 +7,8 @@
 
 static struct option vpn_ws_options[] = {
         {"exec", required_argument, NULL, 1 },
+        {"key", required_argument, NULL, 2 },
+        {"crt", required_argument, NULL, 3 },
         {"no-verify", no_argument, &vpn_ws_conf.ssl_no_verify, 1 },
         {NULL, 0, 0, 0}
 };
@@ -299,12 +301,13 @@ int vpn_ws_connect(vpn_ws_peer *peer, char *name) {
 	char *auth = NULL;
 
 	if (at) {
-		auth = vpn_ws_calloc(23 + (strlen(at+1) * 2));
+		char *crd = cpy + 5 + ssl;
+		auth = vpn_ws_calloc(23 + (strlen(crd) * 2));
 		if (!auth) {
 			return -1;
 		}
 		memcpy(auth, "Authorization: Basic ", 21);
-		uint16_t auth_len = vpn_ws_base64_encode((uint8_t *)at+1, strlen(at+2), (uint8_t *)auth + 21);
+		uint16_t auth_len = vpn_ws_base64_encode((uint8_t *)crd, strlen(crd), (uint8_t *)auth + 21);
 		memcpy(auth + 21 + auth_len, "\r\n", 2); 
 	}
 
@@ -340,7 +343,7 @@ int vpn_ws_connect(vpn_ws_peer *peer, char *name) {
 	}
 
 	if (ssl) {
-		vpn_ws_conf.ssl_ctx = vpn_ws_ssl_handshake(peer, domain, NULL, NULL);
+		vpn_ws_conf.ssl_ctx = vpn_ws_ssl_handshake(peer, domain, vpn_ws_conf.ssl_key, vpn_ws_conf.ssl_crt);
 		if (!vpn_ws_conf.ssl_ctx) {
 			return -1;
 		}
@@ -349,7 +352,6 @@ int vpn_ws_connect(vpn_ws_peer *peer, char *name) {
 		}
 	}
 	else {
-		printf("%.*s\n", ret, buf);
 		if (vpn_ws_full_write(peer->fd, buf, ret)) {
 			return -1;
 		}		
@@ -387,6 +389,12 @@ int main(int argc, char *argv[]) {
 				break;	
                         case 1:
                                 vpn_ws_conf.exec = optarg;
+                                break;
+                        case 2:
+                                vpn_ws_conf.ssl_key = optarg;
+                                break;
+                        case 3:
+                                vpn_ws_conf.ssl_crt = optarg;
                                 break;
                         case '?':
                                 break;

@@ -89,6 +89,9 @@ struct vpn_ws_config {
 
 	char *exec;
 
+	char *ssl_key;
+	char *ssl_crt;
+
 	int no_multicast;
 	int no_broadcast;
 	int bridge;
