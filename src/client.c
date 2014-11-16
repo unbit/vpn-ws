@@ -506,23 +506,25 @@ reconnect:
 			vpn_ws_error("main()/select()");
 			vpn_ws_exit(1);
 		}
-
-		// too much inactivity, send a ping
-		// TODO use it in windows too
 		if (ret == 0) {
-			printf("sending PING\n");
-			if (vpn_ws_client_write(peer, (uint8_t *) "\x89\x00", 2)) {
-				vpn_ws_client_destroy(peer);
-                		goto reconnect;
-			}			
-		}
 #else
 		DWORD ret = WaitForMultipleObjects(2, waiting_objects, FALSE, 17000);
 		if (ret == WAIT_FAILED) {
 			vpn_ws_error("main()/WaitForMultipleObjects()");
 			vpn_ws_exit(1);
 		}
+		if (ret == WAIT_TIMEOUT) {
 #endif
+
+		// too much inactivity, send a ping
+			printf("sending PING\n");
+			if (vpn_ws_client_write(peer, (uint8_t *) "\x89\x00", 2)) {
+				vpn_ws_client_destroy(peer);
+                		goto reconnect;
+			}			
+			continue;
+		}
+
 
 #ifndef __WIN32__
 		if (FD_ISSET(peer->fd, &rset)) {
@@ -546,6 +548,8 @@ reconnect:
                                 	goto reconnect;
 				}
 				if (rlen == 0) break;
+				// ignore packet ?
+				if (ws_header == 0) goto decapitate;
 				// is it a masked packet ?
 				uint8_t *ws = peer->buf + ws_header;
 				uint64_t ws_len = rlen - ws_header;
@@ -575,6 +579,7 @@ reconnect:
 				}	
 #endif
 
+decapitate:
 				memmove(peer->buf, peer->buf + rlen, peer->pos - rlen);
         			peer->pos -= rlen;
 			}

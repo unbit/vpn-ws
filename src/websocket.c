@@ -1,9 +1,5 @@
 #include "vpn-ws.h"
 
-int vpn_ws_websocket_pong(vpn_ws_peer *peer) {
-	return -1;
-}
-
 int64_t vpn_ws_websocket_parse(vpn_ws_peer *peer, uint16_t *ws_header) {
 	if (peer->pos < 2) return 0;
 
@@ -48,11 +44,12 @@ int64_t vpn_ws_websocket_parse(vpn_ws_peer *peer, uint16_t *ws_header) {
 		// 8 -> close connection
 		case 8:
 			return -1;
-		// 9 -> send back a pong
+		// 9/10 -> ping/pong (ignore them, as they are only used to hold the connection open)
 		case 9:
-			vpn_ws_log("PONG !\n");
-			return vpn_ws_websocket_pong(peer);
-		// 10 -> ignore	
+		case 10:
+			// set header to 0, so the io engine will ignore it
+			*ws_header = 0;
+			return needed + pktsize;
 		default:
 			return -1;
 	}

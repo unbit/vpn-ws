@@ -197,6 +197,8 @@ again:
 	}
 	// again
 	if (ws_ret == 0) return dirty;
+	// ignore packet ?
+	if (ws_header == 0) goto decapitate;
 
 	uint8_t *ws = peer->buf + ws_header;
 	uint64_t ws_len = ws_ret - ws_header;
