@@ -83,6 +83,11 @@ int64_t vpn_ws_handshake(int queue, vpn_ws_peer *peer) {
 		peer->remote_addr = strndup(remote_addr, peer->remote_addr_len);
 	} 
 
+	char *remote_user = vpn_ws_peer_get_var(peer, "REMOTE_USER", 11, &peer->remote_user_len);
+        if (remote_user) {
+                peer->remote_user = strndup(remote_user, peer->remote_user_len);
+        }
+
 	char *https_dn = vpn_ws_peer_get_var(peer, "HTTPS_DN", 8, &peer->dn_len);
 	if (https_dn) {
 		peer->dn = strndup(https_dn, peer->dn_len);
@@ -326,6 +331,9 @@ int64_t vpn_ws_ctrl_json(int queue, vpn_ws_peer *peer) {
 
 		if (json_append(json, &json_pos, &json_len, "\",\"REMOTE_ADDR\":\"", 17)) goto end;
 		if (json_append_json(json, &json_pos, &json_len, b_peer->remote_addr, b_peer->remote_addr_len)) goto end;
+
+		if (json_append(json, &json_pos, &json_len, "\",\"REMOTE_USER\":\"", 17)) goto end;
+		if (json_append_json(json, &json_pos, &json_len, b_peer->remote_user, b_peer->remote_user_len)) goto end;
 
 		if (json_append(json, &json_pos, &json_len, "\",\"DN\":\"", 8)) goto end;
 		if (json_append_json(json, &json_pos, &json_len, b_peer->dn, b_peer->dn_len)) goto end;

@@ -84,6 +84,8 @@ struct vpn_ws_peer {
 
 	char *remote_addr;
 	uint16_t remote_addr_len;
+	char *remote_user;
+	uint16_t remote_user_len;
 	char *dn;
 	uint16_t dn_len;
 
