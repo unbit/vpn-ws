@@ -194,6 +194,43 @@ vpn-ws --exec "brctl addif br0 vpn0; ifconfig br0 192.168.173.30" --bridge --tun
 ```
 
 
+Client-certificate authentication
+=================================
+
+
+The JSON Control interface
+==========================
+
+The uwsgi protocol supports a raw form of channel selections using 2 bytes of its header. Thos bytes are called "modifiers". By setting the modifier1 to '1' (by default modifiers are set to 0) you will tell the vpn-ws server to show the JSON control interface. This is a simple way for monitoring the server and for kicking out clients.
+
+When connectin to modifier1, a json blob with the data of all connected clients is shown. Passing a specific QUERY_STRING you can issue commands (currently only killing peers is implemented)
+
+```nginx
+location /vpn {
+  include uwsgi_params;
+  uwsgi_pass unix:/run/vpn.sock;
+  auth_basic "VPN";
+  auth_basic_user_file /etc/nginx/.htpasswd;
+}
+
+location /vpn_admin {
+  include uwsgi_params;
+  uwsgi_modifier1 1;
+  uwsgi_pass unix:/run/vpn.sock;
+  auth_basic "VPN ADMIN";
+  auth_basic_user_file /etc/nginx/.htpasswd;
+}
+```
+
+You can now connect to /vpn_admin to see a json representation of connected clients. Each peer has an id. you can kick-out that peer/client adding a query string to the bar: 
+
+/vpn_admin?kill=n
+
+where n is the id of the specific client.
+
+If needed, more commands could be added in the future.
+
+
 Example Clients
 ===============
 
