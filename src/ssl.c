@@ -100,11 +100,13 @@ void *vpn_ws_ssl_handshake(vpn_ws_peer *peer, char *sni, char *key, char *crt) {
 		goto error;
 	}
 
-	// for now we disable verification ... (just for testing)
-	err = SSLSetSessionOption(ctx, kSSLSessionOptionBreakOnServerAuth, true);
-	if (err != noErr) {
-		vpn_ws_log("vpn_ws_ssl_handshake()/SSLSetSessionOption(): %d\n", err);
-		goto error;
+	// disable verification
+	if (vpn_ws_conf.ssl_no_verify) {
+		err = SSLSetSessionOption(ctx, kSSLSessionOptionBreakOnServerAuth, true);
+		if (err != noErr) {
+			vpn_ws_log("vpn_ws_ssl_handshake()/SSLSetSessionOption(): %d\n", err);
+			goto error;
+		}
 	}
 
 	err = SSLSetPeerDomainName(ctx, sni, strlen(sni));
