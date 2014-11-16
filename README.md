@@ -32,7 +32,7 @@ You need gnu make and a c compiler (clang, gcc, and mingw-gcc are supported).
 
 The server has no external dependancies, while the client requires openssl (except for OSX and Windows where their native ssl/tls implementation is used)
 
-Just run
+Just run (remember to use 'gmake' on FreeBSD instead of 'make')
 
 ```sh
 make
@@ -278,3 +278,6 @@ The server on windows is still a work in progress
 
 The client on windows has no support for SSL/TLS
 
+Grant support for NetBSD, OpenBSD and DragonflyBSD
+
+Investigate solaris/smartos/omnios support
