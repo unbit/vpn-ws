@@ -3,7 +3,51 @@
 vpn_ws_fd vpn_ws_bind_ipv6(char *name) {
 	struct sockaddr_in6 sin6;
 	memset(&sin6, 0, sizeof(struct sockaddr_in6));
+
+	char *port = strrchr(name, ':');
+        if (!port) {
+                vpn_ws_error("invalid ipv6 address, must be in the form [address]:port\n");
+                return -1;
+        }
+        *port = 0;	
+	
+	sin6.sin6_family = AF_INET6;
+        sin6.sin6_port = htons(atoi(port + 1));
+        if (!strcmp(name, "[::]")) {
+                sin6.sin6_addr = in6addr_any;
+        }
+        else {
+		char *addr = strndup(name+1, strlen(name+1) -1);
+		inet_pton(AF_INET6, addr, sin6.sin6_addr.s6_addr);
+		free(addr);
+        }
+
+        *port = ':';
+
 	vpn_ws_fd fd = socket(AF_INET6, SOCK_STREAM, 0);
+	if (fd < 0) {
+                vpn_ws_error("vpn_ws_bind_ipv6()/socket()");
+                return -1;
+        }
+
+        int reuse = 1;
+        if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (const void *) &reuse, sizeof(int)) < 0) {
+                vpn_ws_error("vpn_ws_bind_ipv6()/setsockopt()");
+                close(fd);
+                return -1;
+        }
+
+        if (bind(fd, (struct sockaddr *) &sin6, sizeof(struct sockaddr_in6))) {
+                vpn_ws_error("vpn_ws_bind_ipv6()/bind()");
+                close(fd);
+                return -1;
+        }
+
+        if (listen(fd, 100)) {
+                vpn_ws_error("vpn_ws_bind_ipv6()/listen()");
+                close(fd);
+                return -1;
+        }
 	return fd;
 }
 
@@ -11,7 +55,7 @@ vpn_ws_fd vpn_ws_bind_ipv4(char *name) {
 	struct sockaddr_in sin4;
 	memset(&sin4, 0, sizeof(struct sockaddr_in));
 
-	char *port = strchr(name, ':');
+	char *port = strrchr(name, ':');
 	if (!port) {
 		vpn_ws_error("invalid ipv4 address, must be in the form address:port\n");
 		return -1;
