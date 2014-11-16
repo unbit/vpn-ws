@@ -82,7 +82,11 @@ struct vpn_ws_peer {
 	uint8_t raw;
 
 	char *remote_addr;
+	uint16_t remote_addr_len;
 	char *dn;
+	uint16_t dn_len;
+
+	time_t t;
 };
 typedef struct vpn_ws_peer vpn_ws_peer;
 
@@ -174,3 +178,5 @@ void vpn_ws_ssl_close(void *);
 
 int vpn_ws_exec(char *);
 void vpn_ws_announce_peer(vpn_ws_peer *, char *);
+
+int64_t vpn_ws_ctrl_json(int, vpn_ws_peer *);

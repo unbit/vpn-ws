@@ -17,6 +17,7 @@ int vpn_ws_nb(vpn_ws_fd fd) {
 }
 
 void vpn_ws_announce_peer(vpn_ws_peer *peer, char *msg) {
+	if (peer->raw) return;
 #ifndef __WIN32__
 	vpn_ws_log("%s peer %d MAC=%02X:%02X:%02X:%02X:%02X:%02X REMOTE_ADDR=%s DN=%s\n"
 #else

@@ -10,6 +10,8 @@ int vpn_ws_continue_write(vpn_ws_peer *peer) {
         }
         if (wlen == 0) return -1;
 
+	peer->tx+=wlen;
+
         memmove(peer->write_buf, peer->write_buf + wlen, peer->write_pos - wlen);
         peer->write_pos -= wlen;
         // if the whole buffer has been written, signal it
@@ -101,6 +103,7 @@ int vpn_ws_read(vpn_ws_peer *peer, uint64_t amount) {
 	}
 	if (rlen == 0) return -1;
 
+	peer->rx += rlen;
 	peer->pos += rlen;
 
 	return 1;
@@ -145,6 +148,12 @@ int vpn_ws_manage_fd(int queue, vpn_ws_fd fd) {
 		}
 		if (ret == 0) return 0;
 		peer->is_writing = 0;
+		// if handshake is higher than 1, it means we want to close the connection
+		// and to set it as dirty ....
+		if (peer->handshake > 1) {
+			vpn_ws_peer_destroy(peer);
+			return -1;
+		}
 		return vpn_ws_event_write_to_read(queue, peer->fd);
 	}
 
@@ -167,8 +176,7 @@ again:
 		}
 		// again ...
 		if (hret == 0) return dirty;
-
-		peer->handshake = 1;
+		peer->handshake++;
 		memmove(peer->buf, peer->buf + hret, peer->pos - hret);
 		peer->pos -= hret;
 	}
