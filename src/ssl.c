@@ -28,6 +28,8 @@ static int _vpn_ws_ssl_wait_write(fd) {
 #if defined(__APPLE__)
 
 #include <Security/SecureTransport.h>
+#include <Security/SecPolicy.h>
+#include <Security/SecItem.h>
 
 static OSStatus _vpn_ws_ssl_read(SSLConnectionRef ctx, void *data, size_t *rlen) {
 	vpn_ws_peer *peer = (vpn_ws_peer *) ctx;
@@ -106,6 +108,41 @@ void *vpn_ws_ssl_handshake(vpn_ws_peer *peer, char *sni, char *key, char *crt) {
 		if (err != noErr) {
 			vpn_ws_log("vpn_ws_ssl_handshake()/SSLSetSessionOption(): %d\n", err);
 			goto error;
+		}
+	}
+
+	// we use the keychain (so only --crt is supported)
+	if (crt) {
+		CFStringRef label = CFStringCreateWithCString(NULL, crt, kCFStringEncodingUTF8);
+		SecPolicyRef policy = SecPolicyCreateSSL(false, label);
+		CFTypeRef dict_k[4];
+		CFTypeRef dict_v[4];
+
+		dict_k[0] = kSecClass; dict_v[0] = kSecClassIdentity;
+		dict_k[1] = kSecReturnRef; dict_v[1] = kCFBooleanTrue;
+		dict_k[2] = kSecMatchLimit; dict_v[2] = kSecMatchLimitOne;
+		dict_k[3] = kSecMatchPolicy; dict_v[3] = policy;
+
+		CFDictionaryRef dict = CFDictionaryCreate(NULL, dict_k, dict_v, 4,
+					&kCFCopyStringDictionaryKeyCallBacks,
+					&kCFTypeDictionaryValueCallBacks);
+		CFRelease(policy);
+		CFRelease(label);
+
+		SecIdentityRef sec[1] = {NULL};
+		err = SecItemCopyMatching(dict, (CFTypeRef *)&sec[0]);
+		CFRelease(dict);
+		if (err != noErr) {
+                        vpn_ws_log("vpn_ws_ssl_handshake()/SecItemCopyMatching(): %d\n", err);
+                        goto error;
+                }
+		CFArrayRef certs = CFArrayCreate(NULL, (const void **)sec, 1, &kCFTypeArrayCallBacks);	
+		err = SSLSetCertificate(ctx, certs);
+		if(certs) CFRelease(certs);
+		CFRelease(sec[0]);
+		if (err != noErr) {
+			vpn_ws_log("vpn_ws_ssl_handshake()/SSLSetCertificate(): %d\n", err);
+                        goto error;
 		}
 	}
 

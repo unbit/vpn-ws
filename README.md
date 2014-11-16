@@ -185,18 +185,7 @@ to the server command line
 Status/TODO/Working on
 ======================
 
-Linux server has full support
+The server on windows is still a work in progress
 
-Linux client does not support SSL
+The client on windows has no support for SSL/TLS
 
-OSX server has full support
-
-OSX client has full support
-
-FreeBSD server has full support
-
-FreeBSD client has no ssl support
-
-Windows server has no support
-
-Windows client has no ssl support
