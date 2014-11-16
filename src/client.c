@@ -6,7 +6,8 @@
 
 
 static struct option vpn_ws_options[] = {
-        {"exec", required_argument, 0, 1 },
+        {"exec", required_argument, NULL, 1 },
+        {"no-verify", no_argument, &vpn_ws_conf.ssl_no_verify, 1 },
         {NULL, 0, 0, 0}
 };
 
@@ -382,7 +383,8 @@ int main(int argc, char *argv[]) {
                 int c = getopt_long(argc, argv, "", vpn_ws_options, &option_index);
                 if (c < 0) break;
                 switch(c) {
-                        // tuntap
+			case 0:
+				break;	
                         case 1:
                                 vpn_ws_conf.exec = optarg;
                                 break;

@@ -7,6 +7,8 @@ else
 	OS=$(shell uname)
 	ifeq ($(OS), Darwin)
 		LIBS=-framework Security -framework CoreFoundation
+	else
+		LIBS=-lcrypto -lssl
 	endif
 endif
 

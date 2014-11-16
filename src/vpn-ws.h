@@ -92,6 +92,7 @@ struct vpn_ws_config {
 	int no_multicast;
 	int no_broadcast;
 	int bridge;
+	int ssl_no_verify;
 
 	uint8_t tuntap_mac[6];
 
