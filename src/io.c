@@ -260,7 +260,7 @@ parsed:
 	// check for broadcast/multicast
 	// append packet to each peer write buffer ...
 	// attempt to call write for each one
-	if (vpn_ws_mac_is_multicast(mac) || vpn_ws_mac_is_broadcast(mac)) {
+	if ((!vpn_ws_conf.no_multicast && vpn_ws_mac_is_multicast(mac)) || (!vpn_ws_conf.no_broadcast && vpn_ws_mac_is_broadcast(mac))) {
 		// iterate over all peers and write to them
 		uint64_t i;
 		for(i=0;i<vpn_ws_conf.peers_n;i++) {
