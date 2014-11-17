@@ -46,6 +46,14 @@ make vpn-ws
 make vpn-ws-client
 ```
 
+You can build a static binary version too of the server with:
+
+```sh
+make vpn-ws-static
+```
+the resulting binary (vpn-ws) will have no library dependancies.
+
+
 Running the server
 ==================
 
@@ -193,9 +201,23 @@ You can chain multiple commands with ;
 vpn-ws --exec "brctl addif br0 vpn0; ifconfig br0 192.168.173.30" --bridge --tuntap vpn0 /run/vpn.sock
 ```
 
+Required permissions
+====================
+
+The server, when no tuntap device is created, does not require specific permissions. If bound to a unix socket, it will give the 666 permission to the scket itself, in this way nginx (or whatever proxy you are using) will be able to connect to it.
+
+If the server needs to create a tap device, root permissions are required. By the way you can drop privileges soon after the device is created (and the --exec option is eventually executed) with the --uid ang --gid options:
+
+```sh
+vpn-ws --tuntap vpn0 --uid www-data --gid www-data /run/vpn.sock
+```
+
+The client instead requires privileged operations (future releases may allow dropping privileges in the client too)
 
 Client-certificate authentication
 =================================
+
+
 
 
 The JSON Control interface
