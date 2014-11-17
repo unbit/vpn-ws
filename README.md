@@ -64,7 +64,7 @@ updated to [20141117]
 * linux x86_64 static server (https://github.com/unbit/vpn-ws/releases/download/v0.1/vpn-ws-linux-x86_64.tar.gz)
 * linux i386 static server (https://github.com/unbit/vpn-ws/releases/download/v0.1/vpn-ws-linux-i386.tar.gz)
 * freebsd x86_64 static server (https://github.com/unbit/vpn-ws/releases/download/v0.1/vpn-ws-freebsd-x86_64.tar.gz)
-* osx universal binary client and server (.pkg)
+* osx universal binary client and server (https://github.com/unbit/vpn-ws/releases/download/v0.1/vpn-ws-osx.pkg)
 * windows client (https://github.com/unbit/vpn-ws/releases/download/v0.1/vpn-ws-client.exe)
 
 
