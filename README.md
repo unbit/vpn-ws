@@ -49,7 +49,7 @@ make vpn-ws
 make vpn-ws-client
 ```
 
-You can build a static binary version too of the server with:
+You can build a static binary version too of the server (where supported) with:
 
 ```sh
 make vpn-ws-static
