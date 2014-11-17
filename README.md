@@ -324,6 +324,14 @@ Tutorials
 
 https://github.com/unbit/vpn-ws/blob/master/tutorials/ubuntu_trusty_nginx_bridge_client_certificates.md
 
+
+Support
+=======
+
+https://groups.google.com/d/forum/vpn-ws
+
+(or drop a mail to info at unbit dot it for commercial support)
+
 Status/TODO/Working on
 ======================
 
