@@ -66,7 +66,7 @@ updated to [20141117]
 * freebsd x86_64 static server (https://github.com/unbit/vpn-ws/releases/download/v0.1/vpn-ws-freebsd-x86_64.tar.gz)
 * freebsd i386 static server (-)
 * osx universal binary server (.pkg)
-* windows client (.exe)
+* windows client (https://github.com/unbit/vpn-ws/releases/download/v0.1/vpn-ws-client.exe)
 
 
 Running the server
