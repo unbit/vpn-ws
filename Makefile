@@ -21,6 +21,9 @@ src/%.o: src/%.c src/vpn-ws.h
 vpn-ws: $(OBJECTS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -Wall -Werror -g -o vpn-ws $(OBJECTS) $(SERVER_LIBS)
 
+vpn-ws-static: $(OBJECTS)
+	$(CC) -static $(CFLAGS) $(LDFLAGS) -Wall -Werror -g -o vpn-ws $(OBJECTS) $(SERVER_LIBS)
+
 vpn-ws-client: src/client.o src/ssl.o $(SHARED_OBJECTS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -Wall -Werror -g -o vpn-ws-client src/client.o src/ssl.o $(SHARED_OBJECTS) $(LIBS)
 
