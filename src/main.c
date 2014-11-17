@@ -42,6 +42,12 @@ int main(int argc, char *argv[]) {
 			case 2:
 				vpn_ws_conf.exec = optarg;
 				break;
+			case 3:
+				vpn_ws_conf.uid = optarg;
+				break;
+			case 4:
+				vpn_ws_conf.gid = optarg;
+				break;
 			case '?':
 				fprintf(stdout, "usage: %s [options] <address>\n", argv[0]);
 				fprintf(stdout, "\t--tuntap <device>\tcreate the specified tuntap device and attach to the engine\n");
@@ -99,6 +105,59 @@ int main(int argc, char *argv[]) {
                         vpn_ws_exit(1);
                 }
         }
+
+#ifndef __WIN32__
+	// drop privileges
+	if (vpn_ws_conf.gid) {
+		gid_t gid = 0;
+		struct group *g = getgrnam(vpn_ws_conf.gid);
+		if (!g) {
+			if (vpn_ws_is_a_number(vpn_ws_conf.gid)) {
+				gid = atoi(vpn_ws_conf.gid);
+			}
+			else {
+				vpn_ws_log("unable to find group %s\n", vpn_ws_conf.gid);
+				vpn_ws_exit(1);
+			}
+		}
+		else {
+			gid = g->gr_gid;
+		}
+		if (!gid) {
+			vpn_ws_log("unable to drop to gid\n");
+			vpn_ws_exit(1);
+		}
+		if (setgid(gid)) {
+			vpn_ws_error("setgid()");
+			vpn_ws_exit(1);
+		}
+	}
+
+	if (vpn_ws_conf.uid) {
+                uid_t uid = 0;
+                struct passwd *p = getpwnam(vpn_ws_conf.uid);
+                if (!p) {
+                        if (vpn_ws_is_a_number(vpn_ws_conf.uid)) {
+                                uid = atoi(vpn_ws_conf.uid);
+                        }
+                        else {
+                                vpn_ws_log("unable to find user %s\n", vpn_ws_conf.uid);
+                                vpn_ws_exit(1);
+                        }
+                }
+                else {
+                        uid = p->pw_uid;
+                }
+                if (!uid) {
+                        vpn_ws_log("unable to drop to uid\n");
+                        vpn_ws_exit(1);
+                }
+                if (setuid(uid)) {
+                        vpn_ws_error("setuid()");
+                        vpn_ws_exit(1);
+                }
+        }
+#endif
 
 	if (vpn_ws_event_add_read(event_queue, server_fd)) {
 		vpn_ws_exit(1);

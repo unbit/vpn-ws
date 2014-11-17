@@ -56,3 +56,11 @@ char *vpn_ws_strndup(char *s, size_t len) {
 	return s2;
 #endif
 }
+
+int vpn_ws_is_a_number(char *s) {
+	size_t i, len = strlen(s);
+	for(i=0;i<len;i++) {
+		if (!isdigit((int) s[i])) return 0;
+	}
+	return 1;
+}

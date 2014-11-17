@@ -27,9 +27,12 @@
 #include <time.h>
 #include <stdarg.h>
 #include <signal.h>
+#include <ctype.h>
 #include "sha1.h"
 
 #ifndef __WIN32__
+#include <grp.h>
+#include <pwd.h>
 typedef int vpn_ws_fd;
 #define vpn_ws_invalid_fd -1
 #define vpn_ws_is_invalid_fd(x) x < 0
@@ -191,3 +194,4 @@ int64_t vpn_ws_ctrl_json(int, vpn_ws_peer *);
 
 int vpn_ws_str_to_uint(char *, uint64_t);
 char *vpn_ws_strndup(char *, size_t);
+int vpn_ws_is_a_number(char *);
