@@ -320,6 +320,11 @@ You can eventually turn off them selectively adding
 
 to the server command line
 
+Tutorials
+=========
+
+https://github.com/unbit/vpn-ws/blob/master/tutorials/ubuntu_trusty_nginx_bridge_client_certificates.md
+
 Status/TODO/Working on
 ======================
 
