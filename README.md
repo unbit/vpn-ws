@@ -232,7 +232,19 @@ The client instead requires privileged operations (future releases may allow dro
 Client-certificate authentication
 =================================
 
+Your client can supply a certificate for authenticating to the server.
 
+On OpenSSL-based clients (Linux, FreeBSD) you need a key file and a certificate in pem format:
+
+```sh
+vpn-ws-client --key foobar.key --crt foobar.crt vpn0 wss://example.com/vpn
+```
+
+On OSX you need to import a .p12 file (or whatever format it support) to the login keychain, then you need to specify the name of the certificate/identity via the --crt option (no --key is involved):
+
+```sh
+vpn-ws-client --crt "My certificate" /dev/tap0 wss://example.com/vpn
+```
 
 
 The JSON Control interface
