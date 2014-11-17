@@ -2,14 +2,15 @@ SHARED_OBJECTS=src/error.o src/tuntap.o src/memory.o src/bits.o src/base64.o src
 OBJECTS=src/main.o $(SHARED_OBJECTS) src/socket.o src/event.o src/io.o src/uwsgi.o src/sha1.o src/macmap.o
 
 ifeq ($(OS), Windows_NT)
-	LIBS=-lws2_32
+	LIBS+=-lws2_32
 	SERVER_LIBS = $(LIBS)
 else
 	OS=$(shell uname)
 	ifeq ($(OS), Darwin)
-		LIBS=-framework Security -framework CoreFoundation
+		LIBS+=-framework Security -framework CoreFoundation
+		CFLAGS+=-arch i386 -arch x86_64
 	else
-		LIBS=-lcrypto -lssl
+		LIBS+=-lcrypto -lssl
 	endif
 endif
 
@@ -26,6 +27,11 @@ vpn-ws-static: $(OBJECTS)
 
 vpn-ws-client: src/client.o src/ssl.o $(SHARED_OBJECTS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -Wall -Werror -g -o vpn-ws-client src/client.o src/ssl.o $(SHARED_OBJECTS) $(LIBS)
+
+osxpkg: vpn-ws vpn-ws-client
+	mkdir -p dist/usr/bin
+	cp vpn-ws vpn-ws-client dist/usr/bin
+	pkgbuild --root dist --identifier it.unbit.vpn-ws vpn-ws-osx.pkg
 
 clean:
 	rm -rf src/*.o vpn-ws vpn-ws-client
