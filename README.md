@@ -61,10 +61,10 @@ Binary packages
 
 updated to [20141117]
 
-* linux x86_64 static server (tar.gz)
-* linux i386 static server (tar.gz)
-* freebsd x86_64 static server (tar.gz)
-* freebsd i386 static server (tar.gz)
+* linux x86_64 static server (https://github.com/unbit/vpn-ws/releases/download/v0.1/vpn-ws-linux-x86_64.tar.gz)
+* linux i386 static server (https://github.com/unbit/vpn-ws/releases/download/v0.1/vpn-ws-linux-i386.tar.gz)
+* freebsd x86_64 static server (https://github.com/unbit/vpn-ws/releases/download/v0.1/vpn-ws-freebsd-x86_64.tar.gz)
+* freebsd i386 static server (-)
 * osx universal binary server (.pkg)
 * windows client (.exe)
 
