@@ -111,17 +111,52 @@ server {
         uwsgi_pass   unix:/run/vpn.sock;
         include      uwsgi_params;
     }
+    
+    location /admin {
+        uwsgi_pass   unix:/run/vpn.sock;
+        uwsgi_modifier1 1;
+        include      uwsgi_params;
+        allow 192.168.173.30;
+        deny all;
+    }
 }
 ```
 
 adapt ssl_certificate, ssl_certificate_key and ssl_client_certificate to your patch choices and reload nginx.
+
+As yo ucan see we have added a /admin location for allowing access to the json control interface from ip 192.168.173.30 (change it to the ip allowed to administer the vpn)
 
 Starting vpn-ws on boot
 =======================
 
 Ubuntu trusty is upstart based, so we are going to write a config for it:
 
+```
+# vpn-ws script
+
+description "vpn-ws"
+start on runlevel [2345]
+stop on runlevel [06]
+
+exec /usr/local/bin/vpn-ws --uid www-data --gid www-data --tuntap vpn0 --bridge --exec "brctl addif br0 vpn0" /run/vpn.sock >>/var/log/vpn-ws.log 2>&1
+```
+
+save it as /etc/init/vpn-ws.conf and run
+
+```sh
+start vpn-ws
+```
+
+now check nginx logs (and /var/log/vpn-ws.log) to ensure it can connect
 
 Testing a client
 ================
+
+We are going to use a linux client from an external network (ensure your lan gateway forward requests to port 8443 to 192.168.173.17:443)
+
+```sh
+vpn-ws-client --key client.key --crt client.crt --exec "dhclient vpn1 &" vpn1 wss://server:8443/vpn
+```
+
+be sure the dhclient command is followed by & otherwise it will block the whole client
 
