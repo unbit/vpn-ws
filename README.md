@@ -25,8 +25,11 @@ Authentication and Authorization is delegated to the proxy. We believe that batt
 
 By default only HTTPS access (eventually with client certificate authentication) should be allowed, but plain-http mode is permitted for easy debugging.
 
-Installation
-============
+
+Installation from sources
+=========================
+
+note: see below for binary packages
 
 You need gnu make and a c compiler (clang, gcc, and mingw-gcc are supported).
 
@@ -52,6 +55,18 @@ You can build a static binary version too of the server with:
 make vpn-ws-static
 ```
 the resulting binary (vpn-ws) will have no library dependancies.
+
+Binary packages
+===============
+
+updated to [20141117]
+
+* linux x86_64 static server (tar.gz)
+* linux i386 static server (tar.gz)
+* freebsd x86_64 static server (tar.gz)
+* freebsd i386 static server (tar.gz)
+* osx universal binary server (.pkg)
+* windows client (.exe)
 
 
 Running the server
