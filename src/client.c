@@ -284,11 +284,7 @@ int vpn_ws_connect(vpn_ws_peer *peer, char *name) {
 	sin.sin_port = htons(port);
 	sin.sin_addr = *((struct in_addr *) he->h_addr);
 
-#ifndef __WIN32__
-	if (connect(peer->fd, (struct sockaddr *) &sin, sizeof(struct sockaddr_in))) {
-#else
-	if (connect((SOCKET) peer->fd, (struct sockaddr *) &sin, sizeof(struct sockaddr_in))) {
-#endif
+	if (connect(vpn_ws_socket_cast(peer->fd), (struct sockaddr *) &sin, sizeof(struct sockaddr_in))) {
 		vpn_ws_error("vpn_ws_connect()/connect()");
 		return -1;
 	}

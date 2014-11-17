@@ -189,6 +189,23 @@ void vpn_ws_ssl_close(void *ctx) {
 	CFRelease(ctx);
 }
 
+#elif defined(__WIN32__)
+void *vpn_ws_ssl_handshake(vpn_ws_peer *peer, char *sni, char *key, char *crt) {
+	return NULL;
+}
+
+ssize_t vpn_ws_ssl_read(void *ctx, uint8_t *buf, uint64_t len) {
+	return -1;
+}
+
+int vpn_ws_ssl_write(void *ctx, uint8_t *buf, uint64_t len) {
+	return -1;
+}
+
+void vpn_ws_ssl_close(void *ctx) {
+}
+
+
 #else
 
 // use openssl

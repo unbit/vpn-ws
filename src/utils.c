@@ -44,3 +44,15 @@ int vpn_ws_str_to_uint(char *buf, uint64_t len) {
 	}
 	return n;
 }
+
+char *vpn_ws_strndup(char *s, size_t len) {
+#ifndef __WIN32__
+	return strndup(s, len);
+#else
+	char *s2 = vpn_ws_malloc(len+1);
+	if (!s2) return NULL;
+	memcpy(s2, s, len);
+	s2[len] = 0;
+	return s2;
+#endif
+}

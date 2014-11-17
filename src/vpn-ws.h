@@ -35,6 +35,7 @@ typedef int vpn_ws_fd;
 #define vpn_ws_is_invalid_fd(x) x < 0
 #define vpn_ws_send(x, y, z, w) ssize_t w = write(x, y, z)
 #define vpn_ws_recv(x, y, z, r) ssize_t r = read(x, y, z)
+#define vpn_ws_socket_cast(x) x
 #else
 typedef HANDLE vpn_ws_fd;
 #define sleep(x) Sleep(x * 1000);
@@ -43,6 +44,7 @@ typedef HANDLE vpn_ws_fd;
 #define vpn_ws_is_invalid_fd(x) !x
 #define vpn_ws_send(x, y, z, w) ssize_t w = -1; if (!WriteFile(x, y, z, (LPDWORD) &w, 0)) { w = -1; }
 #define vpn_ws_recv(x, y, z, r) ssize_t r = -1; if (!ReadFile(x, y, z, (LPDWORD) &r, 0)) { r = -1; }
+#define vpn_ws_socket_cast(x) (SOCKET)x
 #endif
 
 
@@ -188,3 +190,4 @@ void vpn_ws_announce_peer(vpn_ws_peer *, char *);
 int64_t vpn_ws_ctrl_json(int, vpn_ws_peer *);
 
 int vpn_ws_str_to_uint(char *, uint64_t);
+char *vpn_ws_strndup(char *, size_t);

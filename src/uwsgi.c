@@ -80,22 +80,22 @@ int64_t vpn_ws_handshake(int queue, vpn_ws_peer *peer) {
 
 	char *remote_addr = vpn_ws_peer_get_var(peer, "REMOTE_ADDR", 11, &peer->remote_addr_len);
 	if (remote_addr) {
-		peer->remote_addr = strndup(remote_addr, peer->remote_addr_len);
+		peer->remote_addr = vpn_ws_strndup(remote_addr, peer->remote_addr_len);
 	} 
 
 	char *remote_user = vpn_ws_peer_get_var(peer, "REMOTE_USER", 11, &peer->remote_user_len);
         if (remote_user) {
-                peer->remote_user = strndup(remote_user, peer->remote_user_len);
+                peer->remote_user = vpn_ws_strndup(remote_user, peer->remote_user_len);
         }
 
 	char *https_dn = vpn_ws_peer_get_var(peer, "HTTPS_DN", 8, &peer->dn_len);
 	if (https_dn) {
-		peer->dn = strndup(https_dn, peer->dn_len);
+		peer->dn = vpn_ws_strndup(https_dn, peer->dn_len);
 	}
 	else {
 		https_dn = vpn_ws_peer_get_var(peer, "DN", 2, &peer->dn_len);
 		if (https_dn) {
-			peer->dn = strndup(https_dn, peer->dn_len);
+			peer->dn = vpn_ws_strndup(https_dn, peer->dn_len);
 		}
 	}
 
@@ -185,7 +185,12 @@ static int json_append(char *json, uint64_t *pos, uint64_t *len, char *buf, uint
 
 static int json_append_num(char *json, uint64_t *pos, uint64_t *len, int64_t n) {
 	char buf[30];	
+#ifndef __WIN32__
 	int ret = snprintf(buf, 30, "%lld", (unsigned long long) n);
+#else
+	// TODO fix it
+	int ret = snprintf(buf, 30, "%d", (int) n);
+#endif
 	if (ret <= 0 || ret > 30) return -1;
 	return json_append(json, pos, len, buf, ret);
 }
@@ -324,7 +329,7 @@ int64_t vpn_ws_ctrl_json(int queue, vpn_ws_peer *peer) {
 		found = 1;
 
 		if (json_append(json, &json_pos, &json_len, "{\"id\":", 6)) goto end;
-		if (json_append_num(json, &json_pos, &json_len, b_peer->fd)) goto end;
+		if (json_append_num(json, &json_pos, &json_len, (int) b_peer->fd)) goto end;
 
 		if (json_append(json, &json_pos, &json_len, ",\"MAC\":\"", 8)) goto end;
 		if (json_append_mac(json, &json_pos, &json_len, b_peer->mac)) goto end;
