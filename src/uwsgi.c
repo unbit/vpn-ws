@@ -127,6 +127,14 @@ int64_t vpn_ws_handshake(int queue, vpn_ws_peer *peer) {
 		vpn_ws_announce_peer(peer, "registered new");
 	}
 
+	uint16_t ws_bridge_len = 0;
+	char *ws_bridge = vpn_ws_peer_get_var(peer, "HTTP_X_VPN_WS_BRIDGE", 20, &ws_bridge_len);
+	if (ws_bridge) {
+		if (ws_bridge_len == 2 && ws_bridge[0] == 'o' && ws_bridge[1] == 'n') {
+			peer->bridge = 1;
+		}
+	}
+
 	peer->t = time(NULL);
 
 	// build the response to complete the handshake
