@@ -102,7 +102,7 @@ int64_t vpn_ws_handshake(int queue, vpn_ws_peer *peer) {
 
 	// control request ?
 	if (modifier1 == 1) {
-		peer->raw = 1;
+		peer->ctrl = 1;
 		return vpn_ws_ctrl_json(queue, peer);
 	}
 
@@ -324,7 +324,7 @@ int64_t vpn_ws_ctrl_json(int queue, vpn_ws_peer *peer) {
                 vpn_ws_peer *b_peer = vpn_ws_conf.peers[i];
 
                 if (!b_peer) continue;
-		if (b_peer->raw) continue;
+		if (b_peer->ctrl) continue;
 
 		found = 1;
 
@@ -346,7 +346,25 @@ int64_t vpn_ws_ctrl_json(int queue, vpn_ws_peer *peer) {
 		if (json_append(json, &json_pos, &json_len, "\",\"ts\":\"", 8)) goto end;
 		if (json_append_json(json, &json_pos, &json_len, ctime(&b_peer->t), 24)) goto end;
 
-		if (json_append(json, &json_pos, &json_len, "\",\"unix\":", 9)) goto end;
+		if (json_append(json, &json_pos, &json_len, "\",\"bridge\":", 11)) goto end;
+		if (json_append_num(json, &json_pos, &json_len, b_peer->bridge)) goto end;
+
+		if (json_append(json, &json_pos, &json_len, ",\"macs\":[", 9)) goto end; 
+
+		vpn_ws_mac *macs = b_peer->macs;
+		while(macs) {
+			if (json_append(json, &json_pos, &json_len, "\"",1)) goto end;
+			if (json_append_mac(json, &json_pos, &json_len, macs->mac)) goto end;
+			if (macs->next) {
+				if (json_append(json, &json_pos, &json_len, "\",",2)) goto end;
+			}
+			else {
+				if (json_append(json, &json_pos, &json_len, "\"",1)) goto end;
+			}
+			macs = macs->next;
+		}
+
+		if (json_append(json, &json_pos, &json_len, "],\"unix\":", 9)) goto end;
 		if (json_append_num(json, &json_pos, &json_len, b_peer->t)) goto end;
 
 		if (json_append(json, &json_pos, &json_len, ",\"tx\":", 6)) goto end;

@@ -103,6 +103,7 @@ struct vpn_ws_peer {
 	time_t t;
 	uint8_t bridge;
 	vpn_ws_mac *macs;
+	uint8_t ctrl;
 };
 typedef struct vpn_ws_peer vpn_ws_peer;
 

@@ -98,6 +98,9 @@ int main(int argc, char *argv[]) {
 		if (!vpn_ws_conf.peers) {
 			vpn_ws_exit(1);
 		}
+		if (vpn_ws_conf.bridge) {
+			vpn_ws_conf.peers[tuntap_fd]->bridge = 1;
+		}
 	}
 
 	if (vpn_ws_conf.exec) {

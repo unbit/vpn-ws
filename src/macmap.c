@@ -70,7 +70,7 @@ vpn_ws_peer *vpn_ws_peer_by_bridge_mac(uint8_t *buf) {
                 if (!b_peer->mac_collected) continue;
 		vpn_ws_mac *b_mac = b_peer->macs;
 		while(b_mac) {
-                	if (!memcmp(b_peer->mac, buf, 6)) return b_peer;
+                	if (!memcmp(b_mac->mac, buf, 6)) return b_peer;
 			b_mac = b_mac->next;
 		}
         }
