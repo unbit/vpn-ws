@@ -12,8 +12,16 @@ void vpn_ws_peer_destroy(vpn_ws_peer *peer) {
 		close(fd);
 	}
 	if (peer->remote_addr) free(peer->remote_addr);
+	if (peer->remote_user) free(peer->remote_user);
 	if (peer->dn) free(peer->dn);
 	if (peer->buf) free(peer->buf);
+
+	vpn_ws_mac *macs = peer->macs;
+	while(macs) {
+		vpn_ws_mac *next = macs->next;
+		free(macs);
+		macs = next;
+	}
 	free(peer);
 
 #ifndef __WIN32__

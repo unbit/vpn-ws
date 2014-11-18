@@ -60,6 +60,12 @@ struct vpn_ws_var {
 typedef struct vpn_ws_var vpn_ws_var;
 
 
+struct vpn_ws_mac {
+	uint8_t mac[6];
+	struct vpn_ws_mac *next;
+};
+typedef struct vpn_ws_mac vpn_ws_mac;
+
 struct vpn_ws_peer {
 	vpn_ws_fd fd;
 	uint8_t *buf;
@@ -95,6 +101,8 @@ struct vpn_ws_peer {
 	uint16_t dn_len;
 
 	time_t t;
+	uint8_t bridge;
+	vpn_ws_mac *macs;
 };
 typedef struct vpn_ws_peer vpn_ws_peer;
 
@@ -195,3 +203,7 @@ int64_t vpn_ws_ctrl_json(int, vpn_ws_peer *);
 int vpn_ws_str_to_uint(char *, uint64_t);
 char *vpn_ws_strndup(char *, size_t);
 int vpn_ws_is_a_number(char *);
+
+int vpn_ws_bridge_collect_mac(vpn_ws_peer *, uint8_t *);
+
+vpn_ws_peer * vpn_ws_peer_by_bridge_mac(uint8_t *);

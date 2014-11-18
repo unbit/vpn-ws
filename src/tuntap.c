@@ -143,12 +143,64 @@ end:
 
 #else
 
+#if defined(__APPLE__)
+#include <sys/sys_domain.h>
+#include <sys/kern_control.h>
+// like linux
+#define SIOCGIFHWADDR   0x8927
+#endif
+
 int vpn_ws_tuntap(char *name) {
-	int fd = open(name, O_RDWR);
+	int fd = -1;
+#if defined(__APPLE__)
+	// is it it.unbit.utap ?
+	if (vpn_ws_is_a_number(name)) {
+		fd = socket(PF_SYSTEM, SOCK_DGRAM, SYSPROTO_CONTROL);
+		if (fd < 0) {
+			vpn_ws_error("vpn_ws_tuntap()/socket()");
+			return -1;
+		}
+		struct ctl_info info;
+        	memset(&info, 0, sizeof(info));
+        	strncpy(info.ctl_name, "it.unbit.utap", sizeof(info.ctl_name));
+        	if (ioctl(fd, CTLIOCGINFO, &info)) {
+			vpn_ws_error("vpn_ws_tuntap()/ioctl()");
+			close(fd);
+			return -1;
+		}
+		struct sockaddr_ctl       addr;
+        	memset(&addr, 0, sizeof(addr));
+        	addr.sc_len = sizeof(addr);
+        	addr.sc_family = AF_SYSTEM;
+        	addr.ss_sysaddr = AF_SYS_CONTROL;
+        	addr.sc_id = info.ctl_id;
+        	addr.sc_unit = atoi(name);
+
+		if (connect(fd, (struct sockaddr *)&addr, sizeof(addr))) {
+			vpn_ws_error("vpn_ws_tuntap()/connect()");
+			close(fd);
+			return -1;
+		}
+
+		socklen_t mac_len = 6;
+		if (getsockopt(fd, SYSPROTO_CONTROL, SIOCGIFHWADDR, vpn_ws_conf.tuntap_mac, &mac_len)) {
+			vpn_ws_error("vpn_ws_tuntap()/getsockopt()");
+                        close(fd);
+                        return -1;
+		}
+
+		return fd;
+	}
+	else {
+#endif
+	fd = open(name, O_RDWR);
 	if (fd < 0) {
 		vpn_ws_error("vpn_ws_tuntap()/open()");
 		return -1;
 	}
+#if defined(__APPLE__)
+	}
+#endif
 
 #if defined(__APPLE__) || defined(__FreeBSD__)
 	int mib[6];

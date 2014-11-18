@@ -243,8 +243,15 @@ parsed:
 	// if the MAC has been already collected, compare it
 
 	if (peer->mac_collected) {
-		// we only trust the tap device
-		//if (!peer->raw && memcmp(peer->mac, mac+6, 6)) goto decapitate;
+		// if the peer is a bridge, collect new macs
+		if (memcmp(peer->mac, mac+6, 6)) {
+			// if not a bridge discard packets
+			if (!peer->bridge) goto decapitate;
+			if (vpn_ws_bridge_collect_mac(peer, mac+6)) {
+				vpn_ws_peer_destroy(peer);
+				return -1;
+			}
+		}
 	}
 	else {
 		memcpy(peer->mac, mac+6, 6);
@@ -303,15 +310,46 @@ parsed:
 	}
 
 	// find the MAC addr in the MAC map
-	// append packet to the peer write buffer
 	// attempt to call write
 	vpn_ws_peer *b_peer = vpn_ws_peer_by_mac(mac);
 	if (!b_peer) {
-		if (vpn_ws_conf.tuntap_name && vpn_ws_conf.bridge) {
-			b_peer = vpn_ws_peer_by_mac(vpn_ws_conf.tuntap_mac);
-			if (!b_peer) goto decapitate;
-		}
-		else {
+		// if not found, search in bridge peers
+		b_peer = vpn_ws_peer_by_bridge_mac(mac);
+		// if not found forward to all bridget peers
+		if (!b_peer) {
+			uint64_t i;
+                	for(i=0;i<vpn_ws_conf.peers_n;i++) {
+                        	vpn_ws_peer *b_peer = vpn_ws_conf.peers[i];
+                        	if (!b_peer) continue;
+                        	// myself ?
+                        	if (b_peer->fd == peer->fd) continue;
+                        	// already accounted ?
+                        	if (!b_peer->mac_collected) continue;	
+				// is a bridge ?
+				if (!b_peer->bridge) continue;
+				int wret = -1;
+        			if (b_peer->raw && !peer->raw) {
+                			wret = vpn_ws_write(b_peer, peer->buf+ws_header, ws_ret-ws_header);
+        			}
+        			else if (!b_peer->raw && peer->raw) {
+                			wret = vpn_ws_write_websocket(b_peer, data, data_len);
+        			}
+        			else {
+                			wret = vpn_ws_write(b_peer, data, data_len);
+        			}
+        			if (wret < 0) {
+                			vpn_ws_peer_destroy(b_peer);
+                			dirty = 1;
+        			}
+        			else if (wret == 0) {
+                			dirty = 1;
+                			if (!b_peer->is_writing) {
+                        			if (vpn_ws_event_read_to_write(queue, b_peer->fd)) {
+                                			vpn_ws_peer_destroy(b_peer);
+						}
+                        		}
+                		}
+			}
 			goto decapitate;
 		}
 	}

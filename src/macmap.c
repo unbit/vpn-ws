@@ -61,3 +61,35 @@ vpn_ws_peer *vpn_ws_peer_by_mac(uint8_t *buf) {
 
 	return NULL;
 }
+
+vpn_ws_peer *vpn_ws_peer_by_bridge_mac(uint8_t *buf) {
+        uint64_t i;
+        for(i=0;i<vpn_ws_conf.peers_n;i++) {
+                vpn_ws_peer *b_peer = vpn_ws_conf.peers[i];
+                if (!b_peer) continue;
+                if (!b_peer->mac_collected) continue;
+		vpn_ws_mac *b_mac = b_peer->macs;
+		while(b_mac) {
+                	if (!memcmp(b_peer->mac, buf, 6)) return b_peer;
+			b_mac = b_mac->next;
+		}
+        }
+
+        return NULL;
+}
+
+int vpn_ws_bridge_collect_mac(vpn_ws_peer *peer, uint8_t *mac) {
+	// check if the mac is already collected
+	vpn_ws_mac *b_mac = peer->macs;
+	while(b_mac) {
+		if (!memcmp(b_mac->mac, mac, 6)) return 0;
+		b_mac = b_mac->next;
+	}
+
+	b_mac = vpn_ws_malloc(sizeof(vpn_ws_mac));
+	if (!b_mac) return -1;
+	memcpy(b_mac->mac, mac, 6);
+	b_mac->next = peer->macs;
+	peer->macs = b_mac;
+	return 0;
+}
