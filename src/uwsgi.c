@@ -311,7 +311,7 @@ int64_t vpn_ws_ctrl_json(int queue, vpn_ws_peer *peer) {
 				goto commit;
 			}
 			vpn_ws_peer *b_peer = vpn_ws_conf.peers[fd];
-			if (!b_peer || b_peer->raw) {
+			if (!b_peer || b_peer->raw || b_peer->ctrl) {
 				json[9] = '4';
 				json[10] = '0';
 				json[11] = '4';
