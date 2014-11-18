@@ -196,9 +196,22 @@ brctl addif br0 vpn0
 Client bridge-mode
 ==================
 
-This is a work in progress, it will allow a client to act as a bridge giving access to its whole network to the vpn.
+This mode allows a client to act as a bridge giving access to its whole network to the vpn (and it clients).
 
+Just add --bridge to the client command line and attach the tuntap device to a bridge.
 
+The main problem is that you still need a route to the vpn server, so the best approach would be having two network interfaces on the client (one for the connection with the server, and the other for the physical bridge).
+
+On linux, you can use the macvlan interface (it is basically a copy of a physical interface with a different mac address):
+
+```sh
+ip link add link eth0 name virt0 type macvlan
+ifconfig virt0 0.0.0.0 promisc up
+brctl addif br0 virt0
+# add vpn-ws tuntap device to the bridge
+ifconfig vpn17 0.0.0.0 promisc up
+brctl addif br0 vpn17
+```
 
 
 The --exec trick
