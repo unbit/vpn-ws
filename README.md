@@ -192,6 +192,15 @@ brctl addbr br0
 brctl addif br0 eth0
 brctl addif br0 vpn0
 ```
+
+Client bridge-mode
+==================
+
+This is a work in progress, it will allow a client to act as a bridge giving access to its whole network to the vpn.
+
+
+
+
 The --exec trick
 ================
 
