@@ -99,7 +99,10 @@ int main(int argc, char *argv[]) {
 			vpn_ws_exit(1);
 		}
 		if (vpn_ws_conf.bridge) {
+#ifndef __WIN32__
+
 			vpn_ws_conf.peers[tuntap_fd]->bridge = 1;
+#endif
 		}
 	}
 
