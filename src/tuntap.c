@@ -1,6 +1,6 @@
 #include "vpn-ws.h"
 
-#if defined(__APPLE__) || defined(__FreeBSD__)
+#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
 #include <net/if_dl.h>
 #include <sys/sysctl.h>
 #endif
@@ -202,7 +202,7 @@ int vpn_ws_tuntap(char *name) {
 	}
 #endif
 
-#if defined(__APPLE__) || defined(__FreeBSD__)
+#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
 	int mib[6];
 	mib[0] = CTL_NET;
 	mib[1] = AF_ROUTE;
