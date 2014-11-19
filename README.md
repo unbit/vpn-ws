@@ -120,7 +120,7 @@ vpn-ws-client <tap> <server>
 
 where 'tap' is a (platform-dependent) tap device path, and 'server' is the url of the nginx /vpn path (in the ws://|wss:// form)
 
-Before using the client, you need to ensure you have some form of tun/tap implementation. Linux and FreeBSD already have it out-of the box. 
+Before using the client, you need to ensure you have some form of tun/tap implementation. Linux, FreeBSD and OpenBSD already have it out-of the box. 
 
 For OSX you need to install 
 
@@ -361,6 +361,6 @@ The server on windows is still a work in progress
 
 The client on windows has no support for SSL/TLS
 
-Grant support for NetBSD, OpenBSD and DragonflyBSD
+Grant support for NetBSD, and DragonflyBSD
 
 Investigate solaris/smartos/omnios support
