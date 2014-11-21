@@ -59,7 +59,7 @@ the resulting binary (vpn-ws) will have no library dependancies.
 Binary packages
 ===============
 
-updated to [20141117]
+updated to [20141121]
 
 * linux x86_64 static server (https://github.com/unbit/vpn-ws/releases/download/v0.2/vpn-ws-0.2-linux-x86_64.tar.gz)
 * linux i386 static server (https://github.com/unbit/vpn-ws/releases/download/v0.2/vpn-ws-linux-i386.tar.gz)
