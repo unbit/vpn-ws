@@ -2,8 +2,8 @@ SHARED_OBJECTS=src/error.o src/tuntap.o src/memory.o src/bits.o src/base64.o src
 OBJECTS=src/main.o $(SHARED_OBJECTS) src/socket.o src/event.o src/io.o src/uwsgi.o src/sha1.o src/macmap.o
 
 ifeq ($(OS), Windows_NT)
-	LIBS+=-lws2_32
-	SERVER_LIBS = $(LIBS)
+	LIBS+=-lws2_32 -lsecur32
+	SERVER_LIBS = -lws2_32
 else
 	OS=$(shell uname)
 	ifeq ($(OS), Darwin)

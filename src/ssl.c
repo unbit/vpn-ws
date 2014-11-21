@@ -190,8 +190,13 @@ void vpn_ws_ssl_close(void *ctx) {
 }
 
 #elif defined(__WIN32__)
+#include <schannel.h>
+#include <security.h>
+#include <sspi.h>
 void *vpn_ws_ssl_handshake(vpn_ws_peer *peer, char *sni, char *key, char *crt) {
-	return NULL;
+	PSecurityFunctionTable sec = InitSecurityInterfaceA();
+	vpn_ws_log("%p\n", sec);
+	return sec;
 }
 
 ssize_t vpn_ws_ssl_read(void *ctx, uint8_t *buf, uint64_t len) {
