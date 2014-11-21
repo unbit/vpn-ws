@@ -358,6 +358,8 @@ https://groups.google.com/d/forum/vpn-ws
 Twitter
 =======
 
+(mainly for announces)
+
 @unbit
 
 Status/TODO/Working on
