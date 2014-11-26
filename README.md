@@ -25,6 +25,11 @@ Authentication and Authorization is delegated to the proxy. We believe that batt
 
 By default only HTTPS access (eventually with client certificate authentication) should be allowed, but plain-http mode is permitted for easy debugging.
 
+Virtualhosting
+==============
+
+A vpn-ws client is required to send the Host header during the handshake and "should" support SNI. In this way virtualhosting can be easily managed by the proxy server.
+
 
 Installation from sources
 =========================
