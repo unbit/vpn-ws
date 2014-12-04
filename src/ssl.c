@@ -341,10 +341,7 @@ ssize_t vpn_ws_ssl_read(void *ctx, uint8_t *buf, uint64_t len) {
 	for(;;) {
                 ret = SSL_read((SSL *)ctx, buf, len);
                 if (ret > 0) break;
-                int err = 0;
-                if (ERR_peek_error()) {
-                        err = SSL_get_error((SSL *)ctx, ret);
-                }
+                int err = SSL_get_error((SSL *)ctx, ret);
                 if (err == SSL_ERROR_WANT_READ) {
                         if (_vpn_ws_ssl_wait_read(peer->fd)) return -1;
                         continue;
