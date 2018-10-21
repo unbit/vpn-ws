@@ -251,6 +251,13 @@ void *vpn_ws_ssl_handshake(vpn_ws_peer *peer, char *sni, char *key, char *crt) {
 		}
 		else {
 			SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_PEER, NULL);
+
+			if(SSL_CTX_set_default_verify_paths(ssl_ctx) <= 0) {
+				vpn_ws_log("vpn_ws_ssl_handshake(): unable to set default peer certificate verify paths\n");
+				SSL_CTX_free(ssl_ctx);
+				ssl_ctx = NULL;
+				return NULL;
+			}
 		}
 		ssl_peer_index = SSL_CTX_get_ex_new_index(0, NULL, NULL, NULL, NULL);
 
