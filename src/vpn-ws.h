@@ -30,26 +30,10 @@
 #include <ctype.h>
 #include "sha1.h"
 
-#ifndef __WIN32__
+
 #include <grp.h>
 #include <pwd.h>
 typedef int vpn_ws_fd;
-#define vpn_ws_invalid_fd -1
-#define vpn_ws_is_invalid_fd(x) x < 0
-#define vpn_ws_send(x, y, z, w) ssize_t w = write(x, y, z)
-#define vpn_ws_recv(x, y, z, r) ssize_t r = read(x, y, z)
-#define vpn_ws_socket_cast(x) x
-#else
-typedef HANDLE vpn_ws_fd;
-#define sleep(x) Sleep(x * 1000);
-#define close(x) CloseHandle(x)
-#define vpn_ws_invalid_fd NULL
-#define vpn_ws_is_invalid_fd(x) !x
-#define vpn_ws_send(x, y, z, w) ssize_t w = -1; if (!WriteFile(x, y, z, (LPDWORD) &w, 0)) { w = -1; }
-#define vpn_ws_recv(x, y, z, r) ssize_t r = -1; if (!ReadFile(x, y, z, (LPDWORD) &r, 0)) { r = -1; }
-#define vpn_ws_socket_cast(x) (SOCKET)x
-#endif
-
 
 struct vpn_ws_var {
 	char *key;
@@ -85,8 +69,7 @@ struct vpn_ws_peer {
 	uint8_t has_mask;
 	uint8_t mask[4];
 
-	uint8_t mac_collected;
-	uint8_t mac[6];
+	struct in_addr ip;
 
 	uint64_t rx;
 	uint64_t tx;
@@ -101,8 +84,6 @@ struct vpn_ws_peer {
 	uint16_t dn_len;
 
 	time_t t;
-	uint8_t bridge;
-	vpn_ws_mac *macs;
 	uint8_t ctrl;
 };
 typedef struct vpn_ws_peer vpn_ws_peer;
@@ -110,6 +91,9 @@ typedef struct vpn_ws_peer vpn_ws_peer;
 struct vpn_ws_config {
 	char *server_addr;	
 	char *tuntap_name;
+
+	struct in_addr tuntap_ip;
+	int tuntap_prefix;
 
 	char *uid;
 	char *gid;
@@ -119,12 +103,7 @@ struct vpn_ws_config {
 	char *ssl_key;
 	char *ssl_crt;
 
-	int no_multicast;
-	int no_broadcast;
-	int bridge;
 	int ssl_no_verify;
-
-	uint8_t tuntap_mac[6];
 
 	// this is the highest fd used
 	uint64_t peers_n;
@@ -151,7 +130,8 @@ int vpn_ws_event_fd(void *, int);
 int vpn_ws_event_read_to_write(int, vpn_ws_fd);
 int vpn_ws_event_write_to_read(int, vpn_ws_fd);
 
-vpn_ws_fd vpn_ws_tuntap(char *);
+vpn_ws_fd vpn_ws_tuntap(const char *);
+int vpn_ws_tuntap_set_ip(const char *, struct in_addr, int);
 
 uint16_t vpn_ws_be16(uint8_t *);
 uint64_t vpn_ws_be64(uint8_t *);
@@ -178,16 +158,10 @@ int vpn_ws_continue_write(vpn_ws_peer *);
 
 int64_t vpn_ws_websocket_parse(vpn_ws_peer *, uint16_t *);
 
-int vpn_ws_mac_is_broadcast(uint8_t *);
-int vpn_ws_mac_is_zero(uint8_t *);
-int vpn_ws_mac_is_valid(uint8_t *);
-int vpn_ws_mac_is_loop(uint8_t *, uint8_t *);
-int vpn_ws_mac_is_multicast(uint8_t *);
-
-vpn_ws_peer *vpn_ws_peer_by_mac(uint8_t *);
+vpn_ws_peer *vpn_ws_peer_by_ip(uint8_t *);
 
 int vpn_ws_nb(vpn_ws_fd);
-void vpn_ws_peer_create(int, vpn_ws_fd, uint8_t *);
+void vpn_ws_peer_create(int, vpn_ws_fd, struct in_addr *);
 
 void vpn_ws_log(char *, ...);
 

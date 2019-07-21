@@ -1,7 +1,7 @@
 VERSION=0.2
 
 SHARED_OBJECTS=src/error.o src/tuntap.o src/memory.o src/bits.o src/base64.o src/exec.o src/websocket.o src/utils.o
-OBJECTS=src/main.o $(SHARED_OBJECTS) src/socket.o src/event.o src/io.o src/uwsgi.o src/sha1.o src/macmap.o
+OBJECTS=src/main.o $(SHARED_OBJECTS) src/socket.o src/event.o src/io.o src/uwsgi.o src/sha1.o src/ipmap.o
 
 ifeq ($(OS), Windows_NT)
 	LIBS+=-lws2_32 -lsecur32

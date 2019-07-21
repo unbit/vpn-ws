@@ -204,18 +204,13 @@ void
 sha1_loop(struct sha1_ctxt *ctxt, const void *input, size_t len)
 {
 	const unsigned char *input_c = input;
-	size_t gaplen;
-	size_t gapstart;
-	size_t off;
-	size_t copysiz;
-
-	off = 0;
+	size_t off = 0;
 
 	while (off < len) {
-		gapstart = COUNT % 64;
-		gaplen = 64 - gapstart;
+		size_t gapstart = COUNT % 64;
+		size_t gaplen = 64 - gapstart;
 
-		copysiz = (gaplen < len - off) ? gaplen : len - off;
+		size_t copysiz = (gaplen < len - off) ? gaplen : len - off;
 		memmove(&ctxt->m.b8[gapstart], &input_c[off], copysiz);
 		COUNT += copysiz;
 		COUNT %= 64;
