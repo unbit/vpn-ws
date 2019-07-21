@@ -6,6 +6,7 @@
 
 */
 
+
 int vpn_ws_mac_is_zero(uint8_t *buf) {
         if (buf[0] != 0) return 0;
         if (buf[1] != 0) return 0;
