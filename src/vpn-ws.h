@@ -84,6 +84,7 @@ struct vpn_ws_peer {
 	uint16_t dn_len;
 
 	time_t t;
+	struct timespec ts;
 	uint8_t ctrl;
 };
 typedef struct vpn_ws_peer vpn_ws_peer;
@@ -145,7 +146,7 @@ void vpn_ws_peer_destroy(vpn_ws_peer *);
 
 void vpn_ws_peer_accept(int, int);
 
-int vpn_ws_manage_fd(int, vpn_ws_fd);
+int vpn_ws_manage_fd(int, vpn_ws_fd, const struct timespec *);
 
 int64_t vpn_ws_handshake(int, vpn_ws_peer *);
 char *vpn_ws_peer_get_var(vpn_ws_peer *, char *, uint16_t, uint16_t *);
@@ -156,7 +157,7 @@ int vpn_ws_read(vpn_ws_peer *, uint64_t);
 int vpn_ws_write(vpn_ws_peer *, uint8_t *, uint64_t);
 int vpn_ws_continue_write(vpn_ws_peer *);
 
-int64_t vpn_ws_websocket_parse(vpn_ws_peer *, uint16_t *);
+int64_t vpn_ws_websocket_parse(vpn_ws_peer *, uint16_t *, uint8_t *);
 
 vpn_ws_peer *vpn_ws_peer_by_ip(uint8_t *);
 

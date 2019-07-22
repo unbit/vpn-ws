@@ -48,7 +48,7 @@ int vpn_ws_event_add_read(int queue, int fd) {
 }
 
 int vpn_ws_event_wait(int queue, void *events) {
-	int ret = epoll_wait(queue, events, 64, -1);
+	int ret = epoll_wait(queue, events, 64, 1000);
 	if (ret < 0) {
 		vpn_ws_error("vpn_ws_event_wait()/epoll_wait()");
                 return -1;
