@@ -86,6 +86,7 @@ struct vpn_ws_peer {
 	time_t t;
 	struct timespec ts;
 	uint8_t ctrl;
+	time_t pong_timeout;
 };
 typedef struct vpn_ws_peer vpn_ws_peer;
 

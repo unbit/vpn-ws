@@ -2,6 +2,8 @@
 
 #include <netdb.h>
 
+#define SELECT_TIMEOUT_INTERVAL_SEC 	17
+#define MAX_PONG_TIMEOUT_SEC			60
 
 static struct option vpn_ws_options[] = {
         {"exec", required_argument, NULL, 1 },
@@ -454,9 +456,9 @@ reconnect:
 		FD_ZERO(&rset);
 		FD_SET(peer->fd, &rset);
 		FD_SET(tuntap_fd, &rset);
-		tv.tv_sec = 17;
+		tv.tv_sec = SELECT_TIMEOUT_INTERVAL_SEC;
 		tv.tv_usec = 0;
-		// we send a websocket ping every 17 seconds (if inactive, should be enough
+		// we send a websocket ping every SELECT_TIMEOUT_INTERVAL_SEC seconds (if inactive, should be enough
 		// for every proxy out there)
 		int ret = select(max_fd, &rset, NULL, NULL, &tv);
 		if (ret < 0) {
@@ -464,12 +466,21 @@ reconnect:
 			vpn_ws_error("main()/select()");
 			vpn_ws_exit(1);
 		}
+		
 		if (ret == 0) {
-		// too much inactivity, send a ping
+			if(peer->pong_timeout >= MAX_PONG_TIMEOUT_SEC) {
+				vpn_ws_log("closing connection (no pong from remote server for %lu seconds)");
+				vpn_ws_client_destroy(peer);
+                		goto reconnect;
+			}
+			
+			// too much inactivity, send a ping
 			if (vpn_ws_client_write(peer, (uint8_t *) "\x89\x00", 2)) {
 				vpn_ws_client_destroy(peer);
                 		goto reconnect;
-			}			
+			}
+
+			peer->pong_timeout += SELECT_TIMEOUT_INTERVAL_SEC;
 			continue;
 		}
 
@@ -489,9 +500,12 @@ reconnect:
 					vpn_ws_client_destroy(peer);
                                 	goto reconnect;
 				}
-				if (rlen == 0) break;
-				// ignore packet ?
-				if (opcode == 9 || opcode == 10) goto decapitate;
+				if (rlen == 0) 
+					break;
+	
+				if (opcode == 9 || opcode == 10) 
+					goto decapitate;
+				
 				// is it a masked packet ?
 				uint8_t *ws = peer->buf + ws_header;
 				uint64_t ws_len = rlen - ws_header;
@@ -508,6 +522,7 @@ reconnect:
 				}
 
 decapitate:
+				peer->pong_timeout = 0; // we got traffic so reset the pong timeout
 				memmove(peer->buf, peer->buf + rlen, peer->pos - rlen);
         			peer->pos -= rlen;
 			}

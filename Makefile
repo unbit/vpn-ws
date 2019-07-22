@@ -22,7 +22,7 @@ src/%.o: src/%.c src/vpn-ws.h
 	$(CC) $(CFLAGS) -Wall -Werror -g -c -o $@ $<
 
 tun-ws: $(OBJECTS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -Wall -Werror -g -o tun-ws $(OBJECTS) $(SERVER_LIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -Wall -Werror -lrt -g -o tun-ws $(OBJECTS) $(SERVER_LIBS)
 
 tun-ws-static: $(OBJECTS)
 	$(CC) -static $(CFLAGS) $(LDFLAGS) -Wall -Werror -g -o tun-ws $(OBJECTS) $(SERVER_LIBS)
