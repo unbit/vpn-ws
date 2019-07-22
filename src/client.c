@@ -483,14 +483,15 @@ reconnect:
 			// start getting websocket packets
 			for(;;) {
 				uint16_t ws_header = 0;
-				int64_t rlen = vpn_ws_websocket_parse(peer, &ws_header);
+				uint8_t opcode = 0;
+				int64_t rlen = vpn_ws_websocket_parse(peer, &ws_header, &opcode);
 				if (rlen < 0) {
 					vpn_ws_client_destroy(peer);
                                 	goto reconnect;
 				}
 				if (rlen == 0) break;
 				// ignore packet ?
-				if (ws_header == 0) goto decapitate;
+				if (opcode == 9 || opcode == 10) goto decapitate;
 				// is it a masked packet ?
 				uint8_t *ws = peer->buf + ws_header;
 				uint64_t ws_len = rlen - ws_header;

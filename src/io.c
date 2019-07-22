@@ -107,7 +107,7 @@ int vpn_ws_read(vpn_ws_peer *peer, uint64_t amount) {
 	return 1;
 }
 
-int vpn_ws_manage_fd(int queue, vpn_ws_fd fd) {
+int vpn_ws_manage_fd(int queue, vpn_ws_fd fd, const struct timespec * ts) {
 	// when 1 invoke the event wait loop
 	int dirty = 0;
 
@@ -158,6 +158,9 @@ int vpn_ws_manage_fd(int queue, vpn_ws_fd fd) {
 	// again ...
 	if (ret == 0) return 0;
 
+	// update indication of inbound peer traffic
+	peer->ts = *ts;
+
 again:
 
 	// has completed handshake ?
@@ -179,6 +182,7 @@ again:
 	uint8_t *ip_header = NULL;
 	uint16_t ws_header = 0;
 	int64_t ws_ret = 0;
+	uint8_t opcode = 0;
 
 	if (peer->raw) {
 		// check if there are more data to parse ...
@@ -191,15 +195,34 @@ again:
 	}
 
 	// do we have a full websocket packet ?
-	ws_ret = vpn_ws_websocket_parse(peer, &ws_header);
+	ws_ret = vpn_ws_websocket_parse(peer, &ws_header, &opcode);
 	if (ws_ret < 0) {
 		vpn_ws_peer_destroy(peer);
 		return -1;
 	}
 	// again
 	if (ws_ret == 0) return dirty;
+
+	// respond to PING with PONG
+	if (opcode == 9) {
+		memcpy(peer->write_buf + peer->write_pos, (uint8_t *) "\x8a\x00", 2);
+		peer->write_pos += 2;
+		int wret = vpn_ws_continue_write(peer);
+		if (wret < 0) {
+			vpn_ws_peer_destroy(peer);
+			return -1;
+		} else if (wret == 0) {
+			dirty = 1;
+			if (!peer->is_writing) {
+				if (vpn_ws_event_read_to_write(queue, peer->fd)) {
+					vpn_ws_peer_destroy(peer);
+					return -1;
+				}
+			}
+		}
+	}
 	// ignore packet ?
-	if (ws_header == 0)	goto decapitate;
+	if (opcode == 9 || opcode == 10) goto decapitate;
 
 	uint8_t *ws = peer->buf + ws_header;
 	uint64_t ws_len = ws_ret - ws_header;

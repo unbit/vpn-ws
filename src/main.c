@@ -178,10 +178,13 @@ int main(int argc, char *argv[]) {
 
 	for (;;) {
 		int ret = vpn_ws_event_wait(event_queue, events);
-		if (ret <= 0) {
-			if (ret < 0 && errno == EINTR) continue;
+		if (ret < 0) {
+			if (errno == EINTR) continue;
 			break;
 		}
+
+		struct timespec ts;
+		clock_gettime(CLOCK_MONOTONIC, &ts);
 
 		int i;
 		for (i=0;i<ret;i++) {
@@ -193,7 +196,18 @@ int main(int argc, char *argv[]) {
 			}
 
 			// on peer modification, exit the cycle
-			if (vpn_ws_manage_fd(event_queue, fd)) break;
+			if (vpn_ws_manage_fd(event_queue, fd, &ts)) break;
+		}
+
+		// close peers that didn't send traffic for more than 1 min
+		uint64_t j;
+		for (j=0;j<vpn_ws_conf.peers_n;j++) {
+			vpn_ws_peer *peer = vpn_ws_conf.peers[j];
+			if (peer && !peer->raw &&
+				(ts.tv_sec - peer->ts.tv_sec > 60)) {
+				vpn_ws_log("no traffic from peer %d\n", peer->fd);
+				vpn_ws_peer_destroy(peer);
+			}
 		}
 	}
 

@@ -201,6 +201,7 @@ void vpn_ws_peer_create(int queue, vpn_ws_fd client_fd, struct in_addr *ip) {
 		vpn_ws_announce_peer(peer, "adding new");
 	}
 
+	clock_gettime(CLOCK_MONOTONIC, &peer->ts);
 	vpn_ws_conf.peers[client_fd] = peer;
 }
 

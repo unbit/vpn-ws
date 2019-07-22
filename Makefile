@@ -16,27 +16,27 @@ else
 	endif
 endif
 
-all: vpn-ws vpn-ws-client
+all: tun-ws tun-ws-client
 
 src/%.o: src/%.c src/vpn-ws.h
 	$(CC) $(CFLAGS) -Wall -Werror -g -c -o $@ $<
 
-vpn-ws: $(OBJECTS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -Wall -Werror -g -o vpn-ws $(OBJECTS) $(SERVER_LIBS)
+tun-ws: $(OBJECTS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -Wall -Werror -g -o tun-ws $(OBJECTS) $(SERVER_LIBS)
 
-vpn-ws-static: $(OBJECTS)
-	$(CC) -static $(CFLAGS) $(LDFLAGS) -Wall -Werror -g -o vpn-ws $(OBJECTS) $(SERVER_LIBS)
+tun-ws-static: $(OBJECTS)
+	$(CC) -static $(CFLAGS) $(LDFLAGS) -Wall -Werror -g -o tun-ws $(OBJECTS) $(SERVER_LIBS)
 
-vpn-ws-client: src/client.o src/ssl.o $(SHARED_OBJECTS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -Wall -Werror -g -o vpn-ws-client src/client.o src/ssl.o $(SHARED_OBJECTS) $(LIBS)
+tun-ws-client: src/client.o src/ssl.o $(SHARED_OBJECTS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -Wall -Werror -g -o tun-ws-client src/client.o src/ssl.o $(SHARED_OBJECTS) $(LIBS)
 
-linux-tarball: vpn-ws-static
-	tar zcvf vpn-ws-$(VERSION)-linux-$(shell uname -m).tar.gz vpn-ws
+linux-tarball: tun-ws-static
+	tar zcvf tun-ws-$(VERSION)-linux-$(shell uname -m).tar.gz tun-ws
 
-osxpkg: vpn-ws vpn-ws-client
+osxpkg: tun-ws tun-ws-client
 	mkdir -p dist/usr/bin
-	cp vpn-ws vpn-ws-client dist/usr/bin
-	pkgbuild --root dist --identifier it.unbit.vpn-ws vpn-ws-$(VERSION)-osx.pkg
+	cp tun-ws tun-ws-client dist/usr/bin
+	pkgbuild --root dist --identifier it.unbit.vpn-ws tun-ws-$(VERSION)-osx.pkg
 
 clean:
-	rm -rf src/*.o vpn-ws vpn-ws-client
+	rm -rf src/*.o tun-ws tun-ws-client
