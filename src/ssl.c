@@ -1,7 +1,7 @@
 #include "vpn-ws.h"
 
 #ifndef __WIN32__
-static int _vpn_ws_ssl_wait_read(fd) {
+static int _vpn_ws_ssl_wait_read(int fd) {
         fd_set rset;
         FD_ZERO(&rset);
         FD_SET(fd, &rset);
@@ -12,7 +12,7 @@ static int _vpn_ws_ssl_wait_read(fd) {
         return 0;
 }
 
-static int _vpn_ws_ssl_wait_write(fd) {
+static int _vpn_ws_ssl_wait_write(int fd) {
         fd_set wset;
         FD_ZERO(&wset);
         FD_SET(fd, &wset);
@@ -225,7 +225,11 @@ static SSL_CTX *ssl_ctx = NULL;
 
 void *vpn_ws_ssl_handshake(vpn_ws_peer *peer, char *sni, char *key, char *crt) {
 	if (!ssl_initialized) {
-		OPENSSL_config(NULL);
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+                OPENSSL_config(NULL);
+#else
+               OPENSSL_init_crypto(OPENSSL_INIT_LOAD_CONFIG,NULL);
+#endif
         	SSL_library_init();
         	SSL_load_error_strings();
         	OpenSSL_add_all_algorithms();
@@ -250,6 +254,7 @@ void *vpn_ws_ssl_handshake(vpn_ws_peer *peer, char *sni, char *key, char *crt) {
 			SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_NONE, NULL);
 		}
 		else {
+			SSL_CTX_load_verify_locations(ssl_ctx, "/etc/ssl/certs/ca-certificates.crt", "/etc/ssl/certs/");
 			SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_PEER, NULL);
 		}
 		ssl_peer_index = SSL_CTX_get_ex_new_index(0, NULL, NULL, NULL, NULL);
