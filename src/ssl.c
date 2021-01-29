@@ -254,6 +254,7 @@ void *vpn_ws_ssl_handshake(vpn_ws_peer *peer, char *sni, char *key, char *crt) {
 			SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_NONE, NULL);
 		}
 		else {
+			SSL_CTX_load_verify_locations(ssl_ctx, "/etc/ssl/certs/ca-certificates.crt", "/etc/ssl/certs/");
 			SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_PEER, NULL);
 		}
 		ssl_peer_index = SSL_CTX_get_ex_new_index(0, NULL, NULL, NULL, NULL);
