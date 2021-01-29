@@ -225,7 +225,11 @@ static SSL_CTX *ssl_ctx = NULL;
 
 void *vpn_ws_ssl_handshake(vpn_ws_peer *peer, char *sni, char *key, char *crt) {
 	if (!ssl_initialized) {
-		OPENSSL_config(NULL);
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+                OPENSSL_config(NULL);
+#else
+               OPENSSL_init_crypto(OPENSSL_INIT_LOAD_CONFIG,NULL);
+#endif
         	SSL_library_init();
         	SSL_load_error_strings();
         	OpenSSL_add_all_algorithms();
