@@ -4,6 +4,7 @@
 #include <netdb.h>
 #endif
 
+struct vpn_ws_config vpn_ws_conf;
 
 static struct option vpn_ws_options[] = {
         {"exec", required_argument, NULL, 1 },

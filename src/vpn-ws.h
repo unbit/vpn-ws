@@ -133,7 +133,7 @@ struct vpn_ws_config {
 
 	// used for ssl/tls context
 	void *ssl_ctx;
-} vpn_ws_conf;
+};
 typedef struct vpn_ws_config vpn_ws_config;
 
 extern vpn_ws_config vpn_ws_conf;
