@@ -1,0 +1,5 @@
+/src/*.o
+/vpn-ws
+/vpn-ws-client
+/vpn-ws.exe
+/vpn-ws-client.exe
