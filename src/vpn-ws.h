@@ -138,7 +138,7 @@ typedef struct vpn_ws_config vpn_ws_config;
 
 extern vpn_ws_config vpn_ws_conf;
 
-void vpn_ws_error(char *);
+void vpn_ws_error(const char *);
 void vpn_ws_exit(int);
 
 vpn_ws_fd vpn_ws_bind(char *);
@@ -189,7 +189,9 @@ vpn_ws_peer *vpn_ws_peer_by_mac(uint8_t *);
 int vpn_ws_nb(vpn_ws_fd);
 void vpn_ws_peer_create(int, vpn_ws_fd, uint8_t *);
 
-void vpn_ws_log(char *, ...);
+void vpn_ws_log(const char *, ...);
+void vpn_ws_warning(const char *, ...);
+void vpn_ws_notice(const char *, ...);
 
 void *vpn_ws_ssl_handshake(vpn_ws_peer *, char *, char *, char *);
 int vpn_ws_ssl_write(void *, uint8_t *, uint64_t);
