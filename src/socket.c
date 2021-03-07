@@ -109,7 +109,7 @@ vpn_ws_fd vpn_ws_bind_ipv4(char *name) {
 vpn_ws_fd vpn_ws_bind_unix(char *name) {
 
 #ifdef __WIN32__
-	vpn_ws_log("UNIX domain sockets not supported on windows\n");
+	vpn_ws_log("UNIX domain sockets not supported on windows");
 	return NULL;
 #else
 
