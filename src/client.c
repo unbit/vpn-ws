@@ -2,6 +2,7 @@
 
 #ifndef __WIN32__
 #include <netdb.h>
+#include <resolv.h>
 #endif
 
 
@@ -263,6 +264,9 @@ int vpn_ws_connect(vpn_ws_peer *peer, char *name) {
 	vpn_ws_log("connecting to %s port %u (transport: %s)\n", domain, port, ssl ? "wss": "ws");
 
 	// resolve the domain
+#ifndef __WIN32__
+	res_init();
+#endif
 	struct hostent *he = gethostbyname(domain);
 	if (!he) {
 		vpn_ws_log("vpn_ws_connect()/gethostbyname(): unable to resolve name\n");
