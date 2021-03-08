@@ -1,5 +1,7 @@
 #include "vpn-ws.h"
 
+struct vpn_ws_config vpn_ws_conf;
+
 static struct option vpn_ws_options[] = {
 	{"tuntap", required_argument, NULL, 1 },
 	{"exec", required_argument, NULL, 2 },
