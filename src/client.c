@@ -216,7 +216,7 @@ int vpn_ws_connect(vpn_ws_peer *peer, char *name) {
 	int ssl = 0;
 	uint16_t port = 80;
 	if (strlen(cpy) < 6) {
-		vpn_ws_log("invalid websocket url: %s", cpy);
+		vpn_ws_warning("invalid websocket url: %s", cpy);
 		return -1;
 	}
 
@@ -229,7 +229,7 @@ int vpn_ws_connect(vpn_ws_peer *peer, char *name) {
 		port = 80;
 	}
 	else {
-		vpn_ws_log("invalid websocket url: %s (requires ws:// or wss://)", cpy);
+		vpn_ws_warning("invalid websocket url: %s (requires ws:// or wss://)", cpy);
 		return -1;
 	}
 
@@ -261,7 +261,7 @@ int vpn_ws_connect(vpn_ws_peer *peer, char *name) {
 		port = atoi(port_str+1);
 	}
 
-	vpn_ws_log("connecting to %s port %u (transport: %s)", domain, port, ssl ? "wss": "ws");
+	vpn_ws_notice("connecting to %s port %u (transport: %s)", domain, port, ssl ? "wss": "ws");
 
 	// resolve the domain
 #ifndef __WIN32__
@@ -269,7 +269,7 @@ int vpn_ws_connect(vpn_ws_peer *peer, char *name) {
 #endif
 	struct hostent *he = gethostbyname(domain);
 	if (!he) {
-		vpn_ws_log("vpn_ws_connect()/gethostbyname(): unable to resolve name");
+		vpn_ws_warning("vpn_ws_connect()/gethostbyname(): unable to resolve name");
 		return -1;
 	}
 
@@ -360,11 +360,11 @@ int vpn_ws_connect(vpn_ws_peer *peer, char *name) {
 
 	int http_code = vpn_ws_wait_101(peer->fd, vpn_ws_conf.ssl_ctx);
 	if (http_code != 101) {
-		vpn_ws_log("error, websocket handshake returned code: %d", http_code);
+		vpn_ws_warning("error, websocket handshake returned code: %d", http_code);
 		return -1;
 	}
 
-	vpn_ws_log("connected to %s port %u (transport: %s)", domain, port, ssl ? "wss": "ws");
+	vpn_ws_notice("connected to %s port %u (transport: %s)", domain, port, ssl ? "wss": "ws");
 	return 0;
 }
 
@@ -400,7 +400,7 @@ int main(int argc, char *argv[]) {
                         case '?':
                                 break;
                         default:
-                                vpn_ws_log("error parsing arguments");
+                                vpn_ws_warning("error parsing arguments");
                                 vpn_ws_exit(1);
                 }
         }

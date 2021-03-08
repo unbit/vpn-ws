@@ -239,7 +239,7 @@ void *vpn_ws_ssl_handshake(vpn_ws_peer *peer, char *sni, char *key, char *crt) {
 	if (!ssl_ctx) {
 		ssl_ctx = SSL_CTX_new(SSLv23_client_method());
 		if (!ssl_ctx) {
-			vpn_ws_log("vpn_ws_ssl_handshake(): unable to initialize context");
+			vpn_ws_warning("vpn_ws_ssl_handshake(): unable to initialize context");
 			return NULL;
 		}
 		long ssloptions = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_ALL | SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION;
@@ -261,7 +261,7 @@ void *vpn_ws_ssl_handshake(vpn_ws_peer *peer, char *sni, char *key, char *crt) {
 
 		if (key) {
 			if (SSL_CTX_use_PrivateKey_file(ssl_ctx, key, SSL_FILETYPE_PEM) <= 0) {
-				vpn_ws_log("vpn_ws_ssl_handshake(): unable to load key %s", key);
+				vpn_ws_warning("vpn_ws_ssl_handshake(): unable to load key %s", key);
 				SSL_CTX_free(ssl_ctx);
 				ssl_ctx = NULL;	
 				return NULL;
@@ -270,7 +270,7 @@ void *vpn_ws_ssl_handshake(vpn_ws_peer *peer, char *sni, char *key, char *crt) {
 
 		if (crt) {
 			if (SSL_CTX_use_certificate_chain_file(ssl_ctx, crt) <= 0) {
-				vpn_ws_log("vpn_ws_ssl_handshake(): unable to load certificate %s", crt);
+				vpn_ws_warning("vpn_ws_ssl_handshake(): unable to load certificate %s", crt);
 				SSL_CTX_free(ssl_ctx);
 				ssl_ctx = NULL;	
 				return NULL;
@@ -281,7 +281,7 @@ void *vpn_ws_ssl_handshake(vpn_ws_peer *peer, char *sni, char *key, char *crt) {
 
 	SSL *ssl = SSL_new(ssl_ctx);
 	if (!ssl) {
-		vpn_ws_log("vpn_ws_ssl_handshake(): unable to initialize session");
+		vpn_ws_warning("vpn_ws_ssl_handshake(): unable to initialize session");
 		return NULL;
 	}
 	SSL_set_fd(ssl, peer->fd);
@@ -312,7 +312,7 @@ void *vpn_ws_ssl_handshake(vpn_ws_peer *peer, char *sni, char *key, char *crt) {
 
 error:
 	err = ERR_get_error_line_data(NULL, NULL, NULL, NULL);
-	vpn_ws_log("vpn_ws_ssl_handshake(): %s", ERR_error_string(err, NULL));
+	vpn_ws_warning("vpn_ws_ssl_handshake(): %s", ERR_error_string(err, NULL));
 	ERR_clear_error();
 	SSL_free(ssl);
 	return NULL;

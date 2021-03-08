@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
 				fprintf(stdout, "\t--help\t\t\tthis help\n");
 				exit(0);
 			default:
-				vpn_ws_log("error parsing arguments");
+				vpn_ws_warning("error parsing arguments");
 				vpn_ws_exit(1);
 		}
 	}
@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
 				gid = atoi(vpn_ws_conf.gid);
 			}
 			else {
-				vpn_ws_log("unable to find group %s", vpn_ws_conf.gid);
+				vpn_ws_warning("unable to find group %s", vpn_ws_conf.gid);
 				vpn_ws_exit(1);
 			}
 		}
@@ -130,7 +130,7 @@ int main(int argc, char *argv[]) {
 			gid = g->gr_gid;
 		}
 		if (!gid) {
-			vpn_ws_log("unable to drop to gid");
+			vpn_ws_warning("unable to drop to gid");
 			vpn_ws_exit(1);
 		}
 		if (setgid(gid)) {
@@ -147,7 +147,7 @@ int main(int argc, char *argv[]) {
                                 uid = atoi(vpn_ws_conf.uid);
                         }
                         else {
-                                vpn_ws_log("unable to find user %s", vpn_ws_conf.uid);
+                                vpn_ws_warning("unable to find user %s", vpn_ws_conf.uid);
                                 vpn_ws_exit(1);
                         }
                 }
@@ -155,7 +155,7 @@ int main(int argc, char *argv[]) {
                         uid = p->pw_uid;
                 }
                 if (!uid) {
-                        vpn_ws_log("unable to drop to uid");
+                        vpn_ws_warning("unable to drop to uid");
                         vpn_ws_exit(1);
                 }
                 if (setuid(uid)) {
