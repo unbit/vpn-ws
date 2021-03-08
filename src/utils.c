@@ -20,9 +20,9 @@ void vpn_ws_announce_peer(vpn_ws_peer *peer, char *msg) {
 	if (peer->raw) return;
 	if (!peer->mac_collected) return;
 #ifndef __WIN32__
-	vpn_ws_log("%s peer %d MAC=%02X:%02X:%02X:%02X:%02X:%02X REMOTE_ADDR=%s REMOTE_USER=%s DN=%s\n"
+	vpn_ws_log("%s peer %d MAC=%02X:%02X:%02X:%02X:%02X:%02X REMOTE_ADDR=%s REMOTE_USER=%s DN=%s"
 #else
-	vpn_ws_log("%s peer %p MAC=%02X:%02X:%02X:%02X:%02X:%02X REMOTE_ADDR=%s REMOTE_USER=%s DN=%s\n"
+	vpn_ws_log("%s peer %p MAC=%02X:%02X:%02X:%02X:%02X:%02X REMOTE_ADDR=%s REMOTE_USER=%s DN=%s"
 #endif
 			,msg,
 			peer->fd,

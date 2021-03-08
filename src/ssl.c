@@ -98,7 +98,7 @@ void *vpn_ws_ssl_handshake(vpn_ws_peer *peer, char *sni, char *key, char *crt) {
 
 	err = SSLSetConnection(ctx, peer);
 	if (err != noErr) {
-		vpn_ws_log("vpn_ws_ssl_handshake()/SSLSetConnection(): %d\n", err);
+		vpn_ws_log("vpn_ws_ssl_handshake()/SSLSetConnection(): %d", err);
 		goto error;
 	}
 
@@ -106,7 +106,7 @@ void *vpn_ws_ssl_handshake(vpn_ws_peer *peer, char *sni, char *key, char *crt) {
 	if (vpn_ws_conf.ssl_no_verify) {
 		err = SSLSetSessionOption(ctx, kSSLSessionOptionBreakOnServerAuth, true);
 		if (err != noErr) {
-			vpn_ws_log("vpn_ws_ssl_handshake()/SSLSetSessionOption(): %d\n", err);
+			vpn_ws_log("vpn_ws_ssl_handshake()/SSLSetSessionOption(): %d", err);
 			goto error;
 		}
 	}
@@ -133,22 +133,22 @@ void *vpn_ws_ssl_handshake(vpn_ws_peer *peer, char *sni, char *key, char *crt) {
 		err = SecItemCopyMatching(dict, (CFTypeRef *)&sec[0]);
 		CFRelease(dict);
 		if (err != noErr) {
-                        vpn_ws_log("vpn_ws_ssl_handshake()/SecItemCopyMatching(): %d\n", err);
-                        goto error;
-                }
+			vpn_ws_log("vpn_ws_ssl_handshake()/SecItemCopyMatching(): %d", err);
+			goto error;
+		}
 		CFArrayRef certs = CFArrayCreate(NULL, (const void **)sec, 1, &kCFTypeArrayCallBacks);	
 		err = SSLSetCertificate(ctx, certs);
 		if(certs) CFRelease(certs);
 		CFRelease(sec[0]);
 		if (err != noErr) {
-			vpn_ws_log("vpn_ws_ssl_handshake()/SSLSetCertificate(): %d\n", err);
-                        goto error;
+			vpn_ws_log("vpn_ws_ssl_handshake()/SSLSetCertificate(): %d", err);
+			goto error;
 		}
 	}
 
 	err = SSLSetPeerDomainName(ctx, sni, strlen(sni));
 	if (err != noErr) {
-		vpn_ws_log("vpn_ws_ssl_handshake()/SSLSetPeerDomainName(): %d\n", err);
+		vpn_ws_log("vpn_ws_ssl_handshake()/SSLSetPeerDomainName(): %d", err);
 		goto error;
 	}
 
@@ -156,8 +156,8 @@ void *vpn_ws_ssl_handshake(vpn_ws_peer *peer, char *sni, char *key, char *crt) {
 		err = SSLHandshake(ctx);
 		if (err != noErr) {
 			if (err == errSSLServerAuthCompleted) continue;
-			vpn_ws_log("vpn_ws_ssl_handshake()/SSLHandshake(): %d\n", err);
-                	goto error;
+			vpn_ws_log("vpn_ws_ssl_handshake()/SSLHandshake(): %d", err);
+			goto error;
 		}
 		break;
 	}
@@ -195,7 +195,7 @@ void vpn_ws_ssl_close(void *ctx) {
 #include <sspi.h>
 void *vpn_ws_ssl_handshake(vpn_ws_peer *peer, char *sni, char *key, char *crt) {
 	PSecurityFunctionTable sec = InitSecurityInterfaceA();
-	vpn_ws_log("%p\n", sec);
+	vpn_ws_log("%p", sec);
 	return sec;
 }
 
@@ -239,7 +239,7 @@ void *vpn_ws_ssl_handshake(vpn_ws_peer *peer, char *sni, char *key, char *crt) {
 	if (!ssl_ctx) {
 		ssl_ctx = SSL_CTX_new(SSLv23_client_method());
 		if (!ssl_ctx) {
-			vpn_ws_log("vpn_ws_ssl_handshake(): unable to initialize context\n");
+			vpn_ws_log("vpn_ws_ssl_handshake(): unable to initialize context");
 			return NULL;
 		}
 		long ssloptions = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_ALL | SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION;
@@ -261,7 +261,7 @@ void *vpn_ws_ssl_handshake(vpn_ws_peer *peer, char *sni, char *key, char *crt) {
 
 		if (key) {
 			if (SSL_CTX_use_PrivateKey_file(ssl_ctx, key, SSL_FILETYPE_PEM) <= 0) {
-				vpn_ws_log("vpn_ws_ssl_handshake(): unable to load key %s\n", key);
+				vpn_ws_log("vpn_ws_ssl_handshake(): unable to load key %s", key);
 				SSL_CTX_free(ssl_ctx);
 				ssl_ctx = NULL;	
 				return NULL;
@@ -270,7 +270,7 @@ void *vpn_ws_ssl_handshake(vpn_ws_peer *peer, char *sni, char *key, char *crt) {
 
 		if (crt) {
 			if (SSL_CTX_use_certificate_chain_file(ssl_ctx, crt) <= 0) {
-				vpn_ws_log("vpn_ws_ssl_handshake(): unable to load certificate %s\n", crt);
+				vpn_ws_log("vpn_ws_ssl_handshake(): unable to load certificate %s", crt);
 				SSL_CTX_free(ssl_ctx);
 				ssl_ctx = NULL;	
 				return NULL;
@@ -281,7 +281,7 @@ void *vpn_ws_ssl_handshake(vpn_ws_peer *peer, char *sni, char *key, char *crt) {
 
 	SSL *ssl = SSL_new(ssl_ctx);
 	if (!ssl) {
-		vpn_ws_log("vpn_ws_ssl_handshake(): unable to initialize session\n");
+		vpn_ws_log("vpn_ws_ssl_handshake(): unable to initialize session");
 		return NULL;
 	}
 	SSL_set_fd(ssl, peer->fd);
@@ -312,7 +312,7 @@ void *vpn_ws_ssl_handshake(vpn_ws_peer *peer, char *sni, char *key, char *crt) {
 
 error:
 	err = ERR_get_error_line_data(NULL, NULL, NULL, NULL);
-	vpn_ws_log("vpn_ws_ssl_handshake(): %s\n", ERR_error_string(err, NULL));
+	vpn_ws_log("vpn_ws_ssl_handshake(): %s", ERR_error_string(err, NULL));
 	ERR_clear_error();
 	SSL_free(ssl);
 	return NULL;

@@ -125,14 +125,14 @@ int vpn_ws_manage_fd(int queue, vpn_ws_fd fd) {
 	vpn_ws_peer *peer = NULL;
 #endif
 	if (!peer) {
-		vpn_ws_log("[BUG] fd %d not found\n", fd);
+		vpn_ws_log("[BUG] fd %d not found", fd);
 		close(fd);
 		return -1;
 	}
 
 	// is it valid ?
 	if (peer->fd != fd) {
-		vpn_ws_log("[BUG] found invalid peer %d != %d \n", peer->fd, fd);
+		vpn_ws_log("[BUG] found invalid peer %d != %d", peer->fd, fd);
 		vpn_ws_peer_destroy(peer);
 		close(fd);
 		return -1;

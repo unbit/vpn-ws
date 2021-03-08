@@ -20,7 +20,7 @@ int vpn_ws_exec(char *cmd) {
 		if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
 			return 0;
 		}
-		vpn_ws_log("vpn_ws_exec() returned non-zero code: %d\n", WEXITSTATUS(status));
+		vpn_ws_log("vpn_ws_exec() returned non-zero code: %d", WEXITSTATUS(status));
 		return -1;
 	}
 
@@ -62,7 +62,7 @@ end:
 	CloseHandle(pinfo.hProcess);	
 	CloseHandle(pinfo.hThread);	
 	if (code == 0) return 0;
-	vpn_ws_log("vpn_ws_exec() returned non-zero code: %d\n", code);
+	vpn_ws_log("vpn_ws_exec() returned non-zero code: %d", code);
 	return -1;
 }
 
