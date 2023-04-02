@@ -301,9 +301,7 @@ void *vpn_ws_ssl_handshake(vpn_ws_peer *peer, char *sni, char *key, char *crt) {
 	for(;;) {
 		int ret = SSL_connect(ssl);
 		if (ret > 0) break;
-		if (ERR_peek_error()) {
-			err = SSL_get_error(ssl, ret);
-		}
+		err = SSL_get_error(ssl, ret);
 		if (err == SSL_ERROR_WANT_READ) {
 			if (_vpn_ws_ssl_wait_read(peer->fd)) goto error;
 			continue;
@@ -318,7 +316,7 @@ void *vpn_ws_ssl_handshake(vpn_ws_peer *peer, char *sni, char *key, char *crt) {
         return ssl;
 
 error:
-	err = ERR_get_error_line_data(NULL, NULL, NULL, NULL);
+	err = ERR_get_error();
 	vpn_ws_warning("vpn_ws_ssl_handshake(): %s", ERR_error_string(err, NULL));
 	ERR_clear_error();
 	SSL_free(ssl);
@@ -330,10 +328,7 @@ int vpn_ws_ssl_write(void *ctx, uint8_t *buf, uint64_t len) {
 	for(;;) {
                 int ret = SSL_write((SSL *)ctx, buf, len);
                 if (ret > 0) break;
-                int err = 0;
-                if (ERR_peek_error()) {
-                        err = SSL_get_error((SSL *)ctx, ret);
-                }
+                int err = SSL_get_error((SSL *)ctx, ret);
                 if (err == SSL_ERROR_WANT_READ) {
                         if (_vpn_ws_ssl_wait_read(peer->fd)) return -1;
                         continue;
@@ -372,10 +367,7 @@ void vpn_ws_ssl_close(void *ctx) {
 	for(;;) {
 		int ret = SSL_shutdown((SSL *)ctx);
 		if (ret > 0) break;
-		int err = 0;
-                if (ERR_peek_error()) {
-                        err = SSL_get_error((SSL *)ctx, ret);
-                }
+		int err = SSL_get_error((SSL *)ctx, ret);
                 if (err == SSL_ERROR_WANT_READ) {
                         if (_vpn_ws_ssl_wait_read(peer->fd)) break;
                         continue;
