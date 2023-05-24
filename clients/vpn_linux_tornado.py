@@ -13,7 +13,7 @@ class VpnWSClient(TornadoWebSocketClient):
         tap.write(str(m))
 
     def closed(self, code, reason=None):
-        print "ooops"
+        print("ooops")
 
 
 ws = VpnWSClient(sys.argv[1])
